@@ -85,15 +85,15 @@ do
     echo "$localLinesOver80 lines over 80 chars in $fileName\n"
 
     #################MAGIC NUMBERS#########################
-    echo "Checking for magic numbers...\n"
+    'echo "Checking for magic numbers...\n"
     if (($verbose == 1)); then
-        grep -E -nH '([\s,+-]([2-9]\d{0,})|(1\d{1,}))(?<!(public|private))' $fileName
+        grep -E -nH ''([\s,+-]([2-9]\d{0,})|(1\d{1,}))'' $fileName
     fi
     
-    localMagicNums=$(grep -E -c '[2-9]\d{0,}' $fileName )
+    localMagicNums=$(grep -E -c ''[2-9]\d{0,}'' $fileName )
     totalMagicNums=$(($localMagicNums + $totalMagicNums))
     echo "$localMagicNums magic nums in $fileName\n"
-
+'
     #######################BAD VARIABLE NAMES##############
     #Catches when the variable is assigned. 
     #Catches single letter vars with numbers, ex. i1
@@ -116,46 +116,62 @@ do
         totalMissingFileHeaders=$((1+$totalMissingFileHeaders))
     fi
 
-    ############METHOD HEADERS################
-    #Unintelligent, looking for the word "filename" lines after "/*"
-    #Case-insensitive.
-    #Thank you stack overflow
-    #localMissingFileHeaders=$(grep -Pzic "(?s)(\/\*|\/\/).*\n.*Filename" $fileName)
-    #echo $localMissingFileHeaders
-    #if (($localMissingFileHeaders == 0)); then
-    #    echo "Missing File Header in $fileName"
-    #    totalMissingFileHeaders=$((1+$totalMissingFileHeaders))
-    #fi
-    
-    ############CLASS HEADERS################
+    ############METHOD/CLASS HEADERS################
     #First looks for access modifiers then checks for names of classes.
     #Case-insensitive.
-
-    #First get the lines with an access modifier: These are classes and instance variables.
+    
+    #First get the lines with an access modifier: These are classes,
+    #instance variables, and methods.
     linesWithAccessModifier=$(grep -Eon "public|private" $fileName | cut -f1 -d ":")
     read -a accessModifierLinesArray <<< $linesWithAccessModifier
 
-    echo "length: ${#accessModifierLinesArray[@]}"
+    lastLineIndexToCheck=$((${#accessModifierLinesArray[@]} - 1))
 
-    wordIndex=0
-    #Get all the names we will search for.
-    for lineNumIndex in `seq 0 ${#accessModifierLinesArray[@]}`
+    methodIndex=0
+    classIndex=0
+    instanceVarIndex=0
+    #Get all the names we will search for. Looking for open parens
+    for lineNumIndex in `seq 0 $lastLineIndexToCheck`
     do
-        result=$(sed "${accessModifierLinesArray[$lineNumIndex]}!d" $fileName | grep -Eo "class\s+\S+" | cut -f2 -d " ")
-        echo "Result: $result"
+        result=$(sed "${accessModifierLinesArray[$lineNumIndex]}!d" $fileName | grep -Po "\S+(?=\()")
 
-        #If the word is a valid class then put it in classNames
-        if [[ -z "$result"]]; then
-            classNames[$wordIndex]=result
-            wordIndex=$(($wordIndex + 1))
+        #If the word is a valid method then put it in methodNames
+        if [[ ! -z "$result" ]]; then
+            methodNames[$methodIndex]=$result
+            methodIndex=$(($methodIndex + 1))
+
+        #If the word is not a method then check if it is a class
+        else
+            result=$(sed "${accessModifierLinesArray[$lineNumIndex]}!d" $fileName | grep -Eo "class\s+\S+" | cut -f2 -d " ")
+
+            #If the word is a valid class then put it in classNames
+            if [[ ! -z "$result" ]]; then
+                classNames[$classIndex]=$result
+                classIndex=$(($classIndex + 1))
+
+            #Must be an instance variable. Store the line number to check for magic vars.
+            else
+                instanceVarLines[$instanceVarIndex]=${accessModifierLinesArray[$lineNumIndex]}
+                instanceVarIndex=$(($instanceVarIndex + 1))
+            fi
         fi
     done
+    
+    lastNameIndexToCheck=$((${#methodNames[@]} - 1))
+    
+    #Grep the names of methods to see if there is an appropriate comment.
+    for name in `seq 0 $lastNameIndexToCheck`
+    do
+        result=$(grep -Eic "Name:\s*${methodNames[$name]}" $fileName)
 
-    echo "First: ${classNames[0]}"
-
-
-    #Grep these names to see if there is an appropriate comment.
-    for name in `seq 0 ${#classNames[@]}`
+        if ((result == 0)); then
+            echo "Missing method header for ${methodNames[$name]} in $fileName"
+            totalMissingMethodHeaders=$((1+$totalMissingMethodHeaders))
+        fi
+    done
+    
+    #Grep the names of classes to see if there is an appropriate comment.
+    for name in `seq 0 $lastNameIndexToCheck`
     do
         result=$(grep -Eic "Name:\s*${classNames[$name]}" $fileName)
 
@@ -164,6 +180,84 @@ do
             totalMissingClassHeaders=$((1+$totalMissingClassHeaders))
         fi
     done
+    
+    #################MAGIC NUMBERS#########################
+    echo "Checking for magic numbers...\n"
+    if (($verbose == 1)); then
+        grep -E -nH '([\s,+-]([2-9]\d{0,})|(1\d{1,}))' $fileName
+    fi
+    
+    magicNumLines=$(grep -Eon '[\s,\+-\/\*]([2-9]\d*)|(1\d+)' $fileName | cut -f1 -d ":")
+    read -a magicNumsArray <<< $magicNumLines
+
+    lastNumIndexToCheck=$((${#magicNumsArray[@]} - 1))
+    lastInstanceVarIndex=$((${#instanceVarLines[@]} - 1))
+
+    #From these magic numbers, remove those that are actually instance variables.
+    for numLine in `seq 0 lastNumIndexToCheck`
+    do
+        #Inefficient, but checking if one of the magic numbers is an instance variable.
+        #If so then it isn't a magic number. Note: ignoring static and final.
+        #public instance variables are also ok.
+        isBad=1
+        for numInstanceVar in `seq 0 lastInstanceVarIndex`
+        do
+            if [[${magicNumsArray[$numLine]} == ${instanceVarLines[$numInstanceVar]}]]; then
+                isBad=0
+            fi
+        done
+        
+        if (($isBad == 1)); then
+            localMagicNums=$(($localMagicNums + 1))
+
+            if (($verbose == 1)); then
+                sed "${magicNumsArray[$numLine]}!d" $fileName
+            fi
+        fi
+    done
+    
+
+    totalMagicNums=$(($localMagicNums + $totalMagicNums))
+    
+    if (($localMagicNums != 0)); then
+        echo "$localMagicNums magic nums in $fileName\n"
+    fi
+    
+    ############CLASS HEADERS################
+    #First looks for access modifiers then checks for names of classes.
+    #Case-insensitive.
+
+    #First get the lines with an access modifier: These are classes and instance variables.
+    'linesWithAccessModifier=$(grep -Eon "public|private" $fileName | cut -f1 -d ":")
+    read -a accessModifierLinesArray <<< $linesWithAccessModifier
+
+    lastLineIndexToCheck=$((${#accessModifierLinesArray[@]} - 1))
+
+    wordIndex=0
+    #Get all the names we will search for.
+    for lineNumIndex in `seq 0 $lastLineIndexToCheck`
+    do
+        result=$(sed "${accessModifierLinesArray[$lineNumIndex]}!d" $fileName | grep -Eo "class\s+\S+" | cut -f2 -d " ")
+
+        #If the word is a valid class then put it in classNames
+        if [[ ! -z "$result" ]]; then
+            classNames[$wordIndex]=$result
+            wordIndex=$(($wordIndex + 1))
+        fi
+    done
+    
+    lastNameIndexToCheck=$((${#classNames[@]} - 1))
+    
+    #Grep these names to see if there is an appropriate comment.
+    for name in `seq 0 $lastNameIndexToCheck`
+    do
+        result=$(grep -Eic "Name:\s*${classNames[$name]}" $fileName)
+
+        if ((result == 0)); then
+            echo "Missing class Header for ${classNames[$name]} in $fileName"
+            totalMissingClassHeaders=$((1+$totalMissingClassHeaders))
+        fi
+    done'
 done
 
 proportion=$(bc <<< "scale=2; $totalNumComments / $totalNumLines * 100")
