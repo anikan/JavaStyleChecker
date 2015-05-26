@@ -85,15 +85,15 @@ do
     echo "$localLinesOver80 lines over 80 chars in $fileName\n"
 
     #################MAGIC NUMBERS#########################
-    'echo "Checking for magic numbers...\n"
-    if (($verbose == 1)); then
-        grep -E -nH ''([\s,+-]([2-9]\d{0,})|(1\d{1,}))'' $fileName
-    fi
+    #'echo "Checking for magic numbers...\n"
+    #if (($verbose == 1)); then
+    #    grep -E -nH ''([\s,+-]([2-9]\d{0,})|(1\d{1,}))'' $fileName
+    #fi
     
-    localMagicNums=$(grep -E -c ''[2-9]\d{0,}'' $fileName )
-    totalMagicNums=$(($localMagicNums + $totalMagicNums))
-    echo "$localMagicNums magic nums in $fileName\n"
-'
+    #localMagicNums=$(grep -E -c ''[2-9]\d{0,}'' $fileName )
+    #totalMagicNums=$(($localMagicNums + $totalMagicNums))
+    #echo "$localMagicNums magic nums in $fileName\n"
+#'
     #######################BAD VARIABLE NAMES##############
     #Catches when the variable is assigned. 
     #Catches single letter vars with numbers, ex. i1
@@ -194,15 +194,15 @@ do
     lastInstanceVarIndex=$((${#instanceVarLines[@]} - 1))
 
     #From these magic numbers, remove those that are actually instance variables.
-    for numLine in `seq 0 lastNumIndexToCheck`
+    for numLine in `seq 0 $lastNumIndexToCheck`
     do
         #Inefficient, but checking if one of the magic numbers is an instance variable.
         #If so then it isn't a magic number. Note: ignoring static and final.
         #public instance variables are also ok.
         isBad=1
-        for numInstanceVar in `seq 0 lastInstanceVarIndex`
+        for numInstanceVar in `seq 0 $lastInstanceVarIndex`
         do
-            if [[${magicNumsArray[$numLine]} == ${instanceVarLines[$numInstanceVar]}]]; then
+            if [[ ${magicNumsArray[$numLine]} -eq ${instanceVarLines[$numInstanceVar]} ]]; then
                 isBad=0
             fi
         done
@@ -216,48 +216,11 @@ do
         fi
     done
     
-
     totalMagicNums=$(($localMagicNums + $totalMagicNums))
     
-    if (($localMagicNums != 0)); then
+    if [[ !$localMagicNums -eq 0 ]]; then
         echo "$localMagicNums magic nums in $fileName\n"
     fi
-    
-    ############CLASS HEADERS################
-    #First looks for access modifiers then checks for names of classes.
-    #Case-insensitive.
-
-    #First get the lines with an access modifier: These are classes and instance variables.
-    'linesWithAccessModifier=$(grep -Eon "public|private" $fileName | cut -f1 -d ":")
-    read -a accessModifierLinesArray <<< $linesWithAccessModifier
-
-    lastLineIndexToCheck=$((${#accessModifierLinesArray[@]} - 1))
-
-    wordIndex=0
-    #Get all the names we will search for.
-    for lineNumIndex in `seq 0 $lastLineIndexToCheck`
-    do
-        result=$(sed "${accessModifierLinesArray[$lineNumIndex]}!d" $fileName | grep -Eo "class\s+\S+" | cut -f2 -d " ")
-
-        #If the word is a valid class then put it in classNames
-        if [[ ! -z "$result" ]]; then
-            classNames[$wordIndex]=$result
-            wordIndex=$(($wordIndex + 1))
-        fi
-    done
-    
-    lastNameIndexToCheck=$((${#classNames[@]} - 1))
-    
-    #Grep these names to see if there is an appropriate comment.
-    for name in `seq 0 $lastNameIndexToCheck`
-    do
-        result=$(grep -Eic "Name:\s*${classNames[$name]}" $fileName)
-
-        if ((result == 0)); then
-            echo "Missing class Header for ${classNames[$name]} in $fileName"
-            totalMissingClassHeaders=$((1+$totalMissingClassHeaders))
-        fi
-    done'
 done
 
 proportion=$(bc <<< "scale=2; $totalNumComments / $totalNumLines * 100")

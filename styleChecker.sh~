@@ -85,15 +85,15 @@ do
     echo "$localLinesOver80 lines over 80 chars in $fileName\n"
 
     #################MAGIC NUMBERS#########################
-    'echo "Checking for magic numbers...\n"
-    if (($verbose == 1)); then
-        grep -E -nH ''([\s,+-]([2-9]\d{0,})|(1\d{1,}))'' $fileName
-    fi
+    #'echo "Checking for magic numbers...\n"
+    #if (($verbose == 1)); then
+    #    grep -E -nH ''([\s,+-]([2-9]\d{0,})|(1\d{1,}))'' $fileName
+    #fi
     
-    localMagicNums=$(grep -E -c '[2-9]\d{0,}' $fileName )
-    totalMagicNums=$(($localMagicNums + $totalMagicNums))
-    echo "$localMagicNums magic nums in $fileName\n"
-'
+    #localMagicNums=$(grep -E -c ''[2-9]\d{0,}'' $fileName )
+    #totalMagicNums=$(($localMagicNums + $totalMagicNums))
+    #echo "$localMagicNums magic nums in $fileName\n"
+#'
     #######################BAD VARIABLE NAMES##############
     #Catches when the variable is assigned. 
     #Catches single letter vars with numbers, ex. i1
@@ -194,15 +194,15 @@ do
     lastInstanceVarIndex=$((${#instanceVarLines[@]} - 1))
 
     #From these magic numbers, remove those that are actually instance variables.
-    for numLine in `seq 0 lastNumIndexToCheck`
+    for numLine in `seq 0 $lastNumIndexToCheck`
     do
         #Inefficient, but checking if one of the magic numbers is an instance variable.
         #If so then it isn't a magic number. Note: ignoring static and final.
         #public instance variables are also ok.
         isBad=1
-        for numInstanceVar in `seq 0 lastInstanceVarIndex`
+        for numInstanceVar in `seq 0 $lastInstanceVarIndex`
         do
-            if [[${magicNumsArray[$numLine]} == ${instanceVarLines[$numInstanceVar]}]]; then
+            if [[ ${magicNumsArray[$numLine]} -eq ${instanceVarLines[$numInstanceVar]} ]]; then
                 isBad=0
             fi
         done
@@ -216,10 +216,9 @@ do
         fi
     done
     
-
     totalMagicNums=$(($localMagicNums + $totalMagicNums))
     
-    if (($localMagicNums != 0)); then
+    if [[ !$localMagicNums -eq 0 ]]; then
         echo "$localMagicNums magic nums in $fileName\n"
     fi
     
