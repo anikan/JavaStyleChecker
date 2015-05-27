@@ -49,11 +49,24 @@ do
     #Handle // comments
     localNumLines=$(wc -l < $fileName)
     localNumComments=$(grep -E -c "\/\/" $fileName)
+    
+    #For later to keep track of which lines are comments
+    doubleSlashCommentLines=$(grep -n "\/\/" $fileName | cut -f1 -d ":")
+    read -a doubleSlashCommentArray <<< $doubleSlashCommentLines
+
+    #Looping through line nums to put into the array.
+    DSArraySize=$((${#doubleSlashCommentArray[@]} - 1)) 
+    for index in `seq 0 $DSArraySize`
+    do
+        #To check whether a line is a comment, just check the value at line number.
+        commentArray[$commentArrayIndex]=1
+    done
+
 
     #Handle /* */ comments
     startCommentLines=$(grep -n "\/\*" $fileName | cut -f1 -d ":")
     endCommentLines=$(grep -n "\*\/" $fileName | cut -f1 -d ":")
-      
+
     #Putting these in an array.
     read -a startCommentArray <<< $startCommentLines
     read -a endCommentArray <<< $endCommentLines
@@ -65,6 +78,12 @@ do
     for index in `seq 0 $arraySize`
     do
         localNumComments=$((${endCommentArray[$index]} - ${startCommentArray[$index]} + $localNumComments))
+    
+        #For later, to keep track of which lines are comments.
+        for commentArrayIndex in `seq ${startCommentArray[$index]} ${endCommentArray[$index]}`
+        do
+            commentArray[$commentArrayIndex]=1
+        done
     done
         
     proportion=$(bc <<< "scale=2; $localNumComments / $localNumLines * 100")
@@ -202,8 +221,13 @@ do
         isBad=1
         for numInstanceVar in `seq 0 $lastInstanceVarIndex`
         do
-            if [[ ${magicNumsArray[$numLine]} -eq ${instanceVarLines[$numInstanceVar]} ]]; then
-                isBad=0
+            if [[ ${commentArray[${magicNumsArray[$numLine]}]} -eq 1 ]]; then
+                isBad=0 
+                
+            else
+                if [[ ${magicNumsArray[$numLine]} -eq ${instanceVarLines[$numInstanceVar]} ]]; then
+                    isBad=0
+                fi
             fi
         done
         
