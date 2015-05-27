@@ -128,9 +128,9 @@ do
     echo "Checking for 1 letter variable names."
 
     if (($verbose == 1)); then
-        grep -E -nH "[;\s]?([a-zA-Z])[\s\d]?=" $fileName 
+        grep -PinH "[;\s\(]([a-z])[\s\d]?=" $fileName 
     fi
-    localBadVarNames=$(grep -E -c "[;\s]?([a-zA-Z])[\s\d]?=" $fileName)
+    localBadVarNames=$(grep -Pci "[;\s\(]([a-z])[\s\d]?=" $fileName)
     totalBadVarNames=$(($localBadVarNames + $totalBadVarNames))
     if (($localBadVarNames != 0)); then
         echo "** $localBadVarNames single-letter names in $fileName"
@@ -180,7 +180,6 @@ do
         #If there is an "=", this must be an instance variable.
         if [[ ! -z "$instanceVarCheck" ]]; then
             instanceVarLines[$instanceVarIndex]=${accessModifierLinesArray[$lineNumIndex]}
-            echo "${instanceVarLines[$instanceVarIndex]} is instance"
             instanceVarIndex=$(($instanceVarIndex + 1))
 
         else

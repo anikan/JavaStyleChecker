@@ -1,124 +1,107 @@
-/*
- * Login: cs8bgg
- * Date: May 14, 2015
- * File: MyCritter.java
- * Sources of help: tutors and the book 
- *
- * This program creates a tiger, makes it eat if the first hunger 
- * time is called.
- */
+// Name: Michael Flatebo 
+// Login: cs8bbd
+// Date: May 14, 2015
+// File: MyCritter.java
+// Sources of Help: NA
+//
+// This class defines the ulitmate character in the critter game. It 
+// defines the critters movements, fighting style, appearance, and hunger
 
-import java.awt.*; 
-import java.util.*;
+import java.awt.*;
+import java.util.Random;
 
-public class MyCritter extends Critter{
-//instance variables referenced throughout the class
-private int NORTH = 0;
-private int SOUTH = 1;
-private int EAST = 2; 
-private int WEST = 3; 
-private int hunger; 
-private int value; 
-private int steps; 
-private Random isRandom; 
-private Color BLUE = new Color(0,0,255);
+public class MyCritter extends Critter {
+  int direction;
+  int stepCount = 0;
+  public MyCritter() {
+  }
+  
 
-/* Name: Shark 
- * Purpose: initializes the instance variables  
- * Parameters: none
- * Return:none
-*/
-public MyCritter(int hunger){
-	//member variable gets set to what is passed in 
-	this.hunger = hunger; 
-	isRandom = new Random(); 
-	value = 0; 
-	steps = 6; 
-}
+// Name: Eat
+// Purpose: Tells MyCritter if it should eat when it reaches food
+// Parameters: None
+// Return: Boolean: true if should eat, false if it shouldn't
 
-/* Name: eat 
- * Purpose: my critter always eats 
- * Parameters: none 
- * Return: a boolean
-*/
-public boolean eat(){
-	//my critter always eats
-	return true; 
-}
+  public boolean eat() {
+    return true;
+  }
 
-/* Name: fight
- * Purpose: to implement the attack that will beat the counter critters
- * so because bear always scratches, my critter will roar which beats 
- * scratches 
- * Paramaters: opponent which is a string 
- * Return: an attack  
-*/
-public Attack fight(String opponent){
-	//if its opponent is a Bear then the roars
-	if(opponent.equals("B")){
-	  return Attack.ROAR;
-	} 
-	//if its opponent is a lion it scratches 
-	if(opponent.equals("L")){
-	  return Attack.SCRATCH; 
-	}
-	//if its a tiger is scratches 
-	if(opponent.equals("0")){
-	  return Attack.SCRATCH; 
-	}
-	else{
-	  return Attack.ROAR; 
-	}
-}
+// Name: Fight
+// Purpose: Tells MyCritter which attack to use in a fight
+// Parameters: 
+// Return: Attack; the type of attack to use
 
-/* Name: getColor
- * Purpose: makes my critter blue 
- * Parameters: none 
- * Return: a color  
-*/
-public Color getColor(){
-	return Color.YELLOW;  
-}
+  public Attack fight(String opponent) {
+   // attacks roar if fighting a bear
+    if ( opponent == "B" )
+      return Attack.ROAR;
+    // attacks scratch if opponent is a lion
+    else if ( opponent == "L" )
+      return Attack.SCRATCH;
+    // attacks scratch if opponent is a tiger without an appetite
+    else if ( opponent == "0" )
+      return Attack.SCRATCH;
+    // otherwise attacks Roar
+    else 
+      return Attack.ROAR;
+     
+      }
 
-/* Name: getMove 
- * Purpose: radnomyl moves my critter 
- * Parameters: none 
- * Return: as direction 
-*/
-public Direction getMove(){
-	//checks to see if my critter takes 9 steps 
-	if (steps % 8 == 0){
-	value = isRandom.nextInt(4);
-	steps = 0;
-	} 
-	//if 0 then increments and moves north
-	if (value == NORTH){
-	   steps++;
-	   return Direction.NORTH; 
-	}
-	//if 1 then increments steps and moves south 
-	else if(value == SOUTH){
-	   steps++;
-	   return Direction.SOUTH;
-	}
-	//if 3 then increments steps and moves west
-	else if(value == WEST){
-	   steps++; 
-	   return Direction.WEST;
-	}
-	else{
-	   steps++; 
-	   return Direction.EAST; 
-	}	
-	}
+// Name: getColor
+// Purpose: Tells the game which color to paint MyCritter
+// Parameters: None
+// Return: The color MyCritter will be
 
+  public Color getColor() {
+    return Color.BLUE;
+  }
 
-/* Name: toString 
- * Purpose: returns the string S
- * Parameters: none 
- * Return: returns a string  
-*/
-public String toString(){
-	return "0";
-	}
-	}
+// Name: getMove
+// Purpose: Tells the character which direction to move
+// Parameters: None
+// Return: Direction: Which direction to move
+
+  public Direction getMove() {
+  // Every fifth step randomly picks a new direction
+   if ( stepCount%5 == 0 )
+    {
+    Random isRandom = new Random();
+    direction = isRandom.nextInt(4);
+    }
+  
+  // if statement for each direction possibility
+  if ( direction == 1 )
+    {
+    stepCount += 1;
+    return Direction.NORTH;
+    }
+
+  if ( direction == 0 )
+    {
+    stepCount += 1;
+    return Direction.WEST;
+    }
+
+  if ( direction == 2 )
+    {
+    stepCount += 1;
+    return Direction.SOUTH;
+    }
+
+  if ( direction == 3 ) 
+    {
+    stepCount += 1;
+    return Direction.EAST;
+    }
+  return Direction.CENTER;
+  }
+
+// Name: ToString
+// Purpose: Tells the game how to draw MyCritter
+// Parameters: None
+// Return: String; M for MyCritter
+
+  public String toString() {
+    return "M";
+  }
+  }

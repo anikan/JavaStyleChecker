@@ -1,6 +1,8 @@
 #!/bin/bash
 #styleChecker: A tool to help check style in programs, according to Ord's specs
-#TODO Check mix of tabs and spaces.
+#Made by Anish Kannan
+#Thanks to Nick Crow (Nack) for regex help
+#TODO Check mix of tabs and spaces. Indetation. 
 
 OPTIND=1         # Reset in case getopts has been used previously in the shell.
 
@@ -128,9 +130,9 @@ do
     echo "Checking for 1 letter variable names."
 
     if (($verbose == 1)); then
-        grep -E -nH "[;\s]?([a-zA-Z])[\s\d]?=" $fileName 
+        grep -PinH "[;\s\(]([a-z])[\s\d]?=" $fileName 
     fi
-    localBadVarNames=$(grep -E -c "[;\s]?([a-zA-Z])[\s\d]?=" $fileName)
+    localBadVarNames=$(grep -Pci "[;\s\(]([a-z])[\s\d]?=" $fileName)
     totalBadVarNames=$(($localBadVarNames + $totalBadVarNames))
     if (($localBadVarNames != 0)); then
         echo "** $localBadVarNames single-letter names in $fileName"
@@ -180,7 +182,6 @@ do
         #If there is an "=", this must be an instance variable.
         if [[ ! -z "$instanceVarCheck" ]]; then
             instanceVarLines[$instanceVarIndex]=${accessModifierLinesArray[$lineNumIndex]}
-            echo "${instanceVarLines[$instanceVarIndex]} is instance"
             instanceVarIndex=$(($instanceVarIndex + 1))
 
         else
