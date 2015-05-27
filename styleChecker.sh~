@@ -42,6 +42,14 @@ fi
 #Loop through files.
 for fileName in "$@"
 do
+    localLinesOver80=0
+    localMagicNums=0
+    localBadVarNames=0
+    localNumLines=0
+    localNumComments=0
+    localMissingFileHeaders=0
+    localMissingMethodHeaders=0
+    localMissingClassHeaders=0
     echo "Checking $fileName"
  
     #####################COMMENT PROPORTIONS###############
@@ -54,16 +62,16 @@ do
     doubleSlashCommentLines=$(grep -n "\/\/" $fileName | cut -f1 -d ":")
     
     #Initializing it for each file.
-    unset "$commentArray"
-    unset "$doubleSlashCommentArray"
+    unset commentArray
+    unset doubleSlashCommentArray
     read -a doubleSlashCommentArray <<< $doubleSlashCommentLines
 
     #Looping through line nums to put into the array.
     DSArraySize=$((${#doubleSlashCommentArray[@]} - 1)) 
-    for index in `seq 0 $DSArraySize`
+    for commentArrayIndex in `seq 0 $DSArraySize`
     do
         #To check whether a line is a comment, just check the value at line number.
-        commentArray[$commentArrayIndex]=1
+        commentArray[${doubleSlashCommentArray[$commentArrayIndex]}]=1
     done
 
 
@@ -72,8 +80,8 @@ do
     endCommentLines=$(grep -n "\*\/" $fileName | cut -f1 -d ":")
 
     #Initializing for each file.
-    unset "$startCommentArray"
-    unset "$endCommentArray"
+    unset startCommentArray
+    unset endCommentArray
 
     #Putting these in an array.
     read -a startCommentArray <<< $startCommentLines
@@ -150,7 +158,7 @@ do
     linesWithAccessModifier=$(grep -Eon "public|private" $fileName | cut -f1 -d ":")
     
     #Initializing for each file.
-    unset "$accessModifierLinesArray"
+    unset accessModifierLinesArray
     read -a accessModifierLinesArray <<< $linesWithAccessModifier
 
     lastLineIndexToCheck=$((${#accessModifierLinesArray[@]} - 1))
@@ -160,33 +168,46 @@ do
     classIndex=0
     instanceVarIndex=0
     #Arrays.
-    unset "$methodNames"
-    unset "$classNames"
-    unset "$instanceVarLines"
+    unset methodNames
+    unset classNames
+    unset instanceVarLines
 
     #Get all the names we will search for. Looking for open parens
     for lineNumIndex in `seq 0 $lastLineIndexToCheck`
     do
-        result=$(sed "${accessModifierLinesArray[$lineNumIndex]}!d" $fileName | grep -Po "\S+(?=\()")
+        #First removing instance var objects with same line declaration and initialization.
+        instanceVarCheck=$(sed "${accessModifierLinesArray[$lineNumIndex]}!d" $fileName | grep -Eo "=")
+        #If there is an "=", this must be an instance variable.
+        if [[ ! -z "$instanceVarCheck" ]]; then
+            instanceVarLines[$instanceVarIndex]=${accessModifierLinesArray[$lineNumIndex]}
+            echo "${instanceVarLines[$instanceVarIndex]} is instance"
+            instanceVarIndex=$(($instanceVarIndex + 1))
 
-        #If the word is a valid method then put it in methodNames
-        if [[ ! -z "$result" ]]; then
-            methodNames[$methodIndex]=$result
-            methodIndex=$(($methodIndex + 1))
-
-        #If the word is not a method then check if it is a class
         else
-            result=$(sed "${accessModifierLinesArray[$lineNumIndex]}!d" $fileName | grep -Eo "class\s+\S+" | cut -f2 -d " ")
+           
+            #Check for method names
+            result=$(sed "${accessModifierLinesArray[$lineNumIndex]}!d" $fileName | grep -Po "\S+(?=\()")
 
-            #If the word is a valid class then put it in classNames
+            #If the word is a valid method then put it in methodNames
             if [[ ! -z "$result" ]]; then
-                classNames[$classIndex]=$result
-                classIndex=$(($classIndex + 1))
+                methodNames[$methodIndex]=$result
+                methodIndex=$(($methodIndex + 1))
 
-            #Must be an instance variable. Store the line number to check for magic vars.
+            #If the word is not a method then check if it is a class
             else
-                instanceVarLines[$instanceVarIndex]=${accessModifierLinesArray[$lineNumIndex]}
-                instanceVarIndex=$(($instanceVarIndex + 1))
+                result=$(sed "${accessModifierLinesArray[$lineNumIndex]}!d" $fileName | grep -Eo "class\s+\S+" | cut -f2 -d " ")
+
+                #If the word is a valid class then put it in classNames
+                if [[ ! -z "$result" ]]; then
+                    classNames[$classIndex]=$result
+                    classIndex=$(($classIndex + 1))
+
+                #Must be an instance variable. Store the line number to check for magic vars.
+                else
+                    instanceVarLines[$instanceVarIndex]=${accessModifierLinesArray[$lineNumIndex]}
+                    instanceVarIndex=$(($instanceVarIndex + 1))
+
+                fi
             fi
         fi
     done
@@ -224,7 +245,7 @@ do
     echo "Checking for magic numbers..."
     
     #initializing it for each file.
-    unset "$magicNumsArray"
+    unset magicNumsArray
 
     magicNumLines=$(grep -Pon '[\s,\+\-\/\*]([2-9]\d*)|(1\d+)' $fileName | cut -f1 -d ":")
     

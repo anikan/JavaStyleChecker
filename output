@@ -1,0 +1,64 @@
+Checking MyCritter.java
+Checking for comment proportions.
+15 is a comment
+32 is a comment
+45 is a comment
+57 is a comment
+61 is a comment
+65 is a comment
+89 is a comment
+94 is a comment
+99 is a comment
+104 is a comment
+** 35.00% of MyCritter.java is comments. 25%-50% is usually good.
+
+Checking for lines over 80 chars...
+Checking for 1 letter variable names.
+Checking for missing file headers...
+Checking for missing method headers...
+**Missing method header for Color in MyCritter.java
+**Missing method header for MyCritter in MyCritter.java
+
+Checking for missing class headers...
+**Missing class Header for MyCritter in MyCritter.java
+
+Checking for magic numbers...
+Line 24:private Color BLUE = new Color(0,0,255);
+Line 36:	steps = 6; 
+Line 90:	if (steps % 8 == 0){
+**3 magic nums in MyCritter.java
+
+Checking ReverseRecurse.java
+Checking for comment proportions.
+19 is a comment
+20 is a comment
+22 is a comment
+25 is a comment
+35 is a comment
+43 is a comment
+83 is a comment
+** 25.00% of ReverseRecurse.java is comments. 25%-50% is usually good.
+
+Checking for lines over 80 chars...
+Checking for 1 letter variable names.
+Checking for missing file headers...
+** Missing File Header in ReverseRecurse.java
+
+Checking for missing method headers...
+
+Checking for missing class headers...
+**Missing class Header for ReverseRecurse{ in ReverseRecurse.java
+
+Checking for magic numbers...
+Line 109:        int[] midArray = new int[size-2]; 
+Line 119:	System.arraycopy(reverse(midArray), 1, copyArray, 0, size-2);
+**2 magic nums in ReverseRecurse.java
+
+-----RESULTS-----
+30.00% of files are comments. 25%-50% is usually good.
+2 missing method headers.
+2 missing class headers.
+1 missing file headers.
+0 bad variable names.
+0 lines over 80.
+5 magic numbers.
