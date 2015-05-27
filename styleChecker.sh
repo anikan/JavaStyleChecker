@@ -116,10 +116,10 @@ do
     ##########################LONG LINES###################
     echo "Checking for lines over 80 chars..."
     if (($verbose == 1)); then
-        grep -E -nH '.\{81\}' $fileName
+        grep -EnH '.{81}' $fileName
     fi
 
-    localLinesOver80=$(grep -E -c '.\{81\}' "$fileName")
+    localLinesOver80=$(grep -Ec '.{81}' "$fileName")
     totalLinesOver80=$(($localLinesOver80 + $totalLinesOver80))
     if (($localLinesOver80 != 0)); then
         echo

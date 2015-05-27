@@ -116,10 +116,10 @@ do
     ##########################LONG LINES###################
     echo "Checking for lines over 80 chars..."
     if (($verbose == 1)); then
-        grep -E -nH '.\{81\}' $fileName
+        grep -EnH '.{81}' $fileName
     fi
 
-    localLinesOver80=$(grep -E -c '.\{81\}' "$fileName")
+    localLinesOver80=$(grep -Ec '.\{81\}' "$fileName")
     totalLinesOver80=$(($localLinesOver80 + $totalLinesOver80))
     if (($localLinesOver80 != 0)); then
         echo
@@ -271,7 +271,7 @@ do
             #Inefficient, but checking if one of the magic numbers is an instance variable.
             #If so then it isn't a magic number. Note: ignoring static and final.
             #public instance variables are also ok.
-        if (($isBad == 1 )); then
+        if [[ $isBad -eq 1 ]]; then
             for numInstanceVar in `seq 0 $lastInstanceVarIndex`
             do
                 if [[ ${magicNumsArray[$numLine]} -eq ${instanceVarLines[$numInstanceVar]} ]]; then
