@@ -12,11 +12,9 @@ Checking for missing class headers...
 **Missing class Header for MyCritter in MyCritter.java
 
 Checking for magic numbers...
-Line 3:// Date: May 14, 2015
-Line 3:// Date: May 14, 2015
 Line 85:  if ( direction == 2 )
 Line 91:  if ( direction == 3 ) 
-**4 magic nums in MyCritter.java
+**2 magic nums in MyCritter.java
 
 Checking ReverseRecurse.java
 Checking for comment proportions.
@@ -45,4 +43,4 @@ Line 128:			int middleLength = originalArray.length-2;
 0 missing file headers.
 2 bad variable names.
 0 lines over 80.
-5 magic numbers.
+3 magic numbers.

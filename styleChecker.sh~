@@ -1,6 +1,8 @@
 #!/bin/bash
 #styleChecker: A tool to help check style in programs, according to Ord's specs
-#TODO Check mix of tabs and spaces.
+#Made by Anish Kannan
+#Thanks to Nick Crow (Nack) for regex help
+#TODO Check mix of tabs and spaces. Indetation. 
 
 OPTIND=1         # Reset in case getopts has been used previously in the shell.
 
@@ -70,6 +72,8 @@ do
     DSArraySize=$((${#doubleSlashCommentArray[@]} - 1)) 
     for commentArrayIndex in `seq 0 $DSArraySize`
     do
+#TODO REMOvE
+        #echo "line: ${doubleSlashCommentArray[$commentArrayIndex]}"
         #To check whether a line is a comment, just check the value at line number.
         commentArray[${doubleSlashCommentArray[$commentArrayIndex]}]=1
     done
@@ -256,21 +260,25 @@ do
     #From these magic numbers, remove those that are actually instance variables.
     for numLine in `seq 0 $lastNumIndexToCheck`
     do
-        #Inefficient, but checking if one of the magic numbers is an instance variable.
-        #If so then it isn't a magic number. Note: ignoring static and final.
-        #public instance variables are also ok.
+
+        #First check if the magic number appeared in a comment.
         isBad=1
-        for numInstanceVar in `seq 0 $lastInstanceVarIndex`
-        do
-            if [[ ${commentArray[${magicNumsArray[$numLine]}]} -eq 1 ]]; then
-                isBad=0 
+        if [[ ${commentArray[${magicNumsArray[$numLine]}]} -eq 1 ]]; then
+            isBad=0 
+        fi
                 
-            else
+            #If it is still bad, then check it's an instance variable.
+            #Inefficient, but checking if one of the magic numbers is an instance variable.
+            #If so then it isn't a magic number. Note: ignoring static and final.
+            #public instance variables are also ok.
+        if (($isBad == 1 )); then
+            for numInstanceVar in `seq 0 $lastInstanceVarIndex`
+            do
                 if [[ ${magicNumsArray[$numLine]} -eq ${instanceVarLines[$numInstanceVar]} ]]; then
                     isBad=0
                 fi
-            fi
-        done
+            done
+        fi
         
         if (($isBad == 1)); then
             localMagicNums=$(($localMagicNums + 1))
