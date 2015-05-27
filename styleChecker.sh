@@ -52,6 +52,10 @@ do
     
     #For later to keep track of which lines are comments
     doubleSlashCommentLines=$(grep -n "\/\/" $fileName | cut -f1 -d ":")
+    
+    #Initializing it for each file.
+    unset "$commentArray"
+    unset "$doubleSlashCommentArray"
     read -a doubleSlashCommentArray <<< $doubleSlashCommentLines
 
     #Looping through line nums to put into the array.
@@ -66,6 +70,10 @@ do
     #Handle /* */ comments
     startCommentLines=$(grep -n "\/\*" $fileName | cut -f1 -d ":")
     endCommentLines=$(grep -n "\*\/" $fileName | cut -f1 -d ":")
+
+    #Initializing for each file.
+    unset "$startCommentArray"
+    unset "$endCommentArray"
 
     #Putting these in an array.
     read -a startCommentArray <<< $startCommentLines
@@ -140,13 +148,22 @@ do
     #First get the lines with an access modifier: These are classes,
     #instance variables, and methods.
     linesWithAccessModifier=$(grep -Eon "public|private" $fileName | cut -f1 -d ":")
+    
+    #Initializing for each file.
+    unset "$accessModifierLinesArray"
     read -a accessModifierLinesArray <<< $linesWithAccessModifier
 
     lastLineIndexToCheck=$((${#accessModifierLinesArray[@]} - 1))
 
+    #Initializing for each file
     methodIndex=0
     classIndex=0
     instanceVarIndex=0
+    #Arrays.
+    unset "$methodNames"
+    unset "$classNames"
+    unset "$instanceVarLines"
+
     #Get all the names we will search for. Looking for open parens
     for lineNumIndex in `seq 0 $lastLineIndexToCheck`
     do
@@ -197,7 +214,7 @@ do
     do
         result=$(grep -Eic "Name:\s*${classNames[$className]}" $fileName)
 
-        if ((result == 0)); then
+        if (($result == 0)); then
             echo "**Missing class Header for ${classNames[$className]} in $fileName"
             totalMissingClassHeaders=$((1+$totalMissingClassHeaders))
         fi
@@ -206,7 +223,11 @@ do
     #################MAGIC NUMBERS#########################
     echo "Checking for magic numbers..."
     
+    #initializing it for each file.
+    unset "$magicNumsArray"
+
     magicNumLines=$(grep -Pon '[\s,\+\-\/\*]([2-9]\d*)|(1\d+)' $fileName | cut -f1 -d ":")
+    
     read -a magicNumsArray <<< $magicNumLines
 
     lastNumIndexToCheck=$((${#magicNumsArray[@]} - 1))
