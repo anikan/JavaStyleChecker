@@ -17,7 +17,7 @@ totalMissingClassHeaders=0
 show_help()
 {
     echo "Usage: [-v] FILE..."
-    echo "Checks style for FILE(s). Ord-style\n"
+    echo "Checks style for FILE(s). Ord-style"
     echo "-v, --verbose     print the results of each grep to find which lines have issues."
 }
 
@@ -42,7 +42,7 @@ fi
 #Loop through files.
 for fileName in "$@"
 do
-    echo "Checking $fileName\n"
+    echo "Checking $fileName"
  
     #####################COMMENT PROPORTIONS###############
     echo "Checking for comment proportions."
@@ -69,8 +69,8 @@ do
         
     proportion=$(bc <<< "scale=2; $localNumComments / $localNumLines * 100")
     
-    echo "$proportion% of $fileName is comments. 25%-50% is usually good."
-
+    echo "** $proportion% of $fileName is comments. 25%-50% is usually good."
+    echo
     totalNumLines=$(($localNumLines + $totalNumLines))
     totalNumComments=$(($localNumComments + $totalNumComments))
       
@@ -82,18 +82,11 @@ do
 
     localLinesOver80=$(grep -E -c '.\{81\}' "$fileName")
     totalLinesOver80=$(($localLinesOver80 + $totalLinesOver80))
-    echo "$localLinesOver80 lines over 80 chars in $fileName\n"
-
-    #################MAGIC NUMBERS#########################
-    #'echo "Checking for magic numbers...\n"
-    #if (($verbose == 1)); then
-    #    grep -E -nH ''([\s,+-]([2-9]\d{0,})|(1\d{1,}))'' $fileName
-    #fi
-    
-    #localMagicNums=$(grep -E -c ''[2-9]\d{0,}'' $fileName )
-    #totalMagicNums=$(($localMagicNums + $totalMagicNums))
-    #echo "$localMagicNums magic nums in $fileName\n"
-#'
+    if (($localLinesOver80 != 0)); then
+        echo
+        echo "**$localLinesOver80 lines over 80 chars in $fileName"
+        echo
+    fi
     #######################BAD VARIABLE NAMES##############
     #Catches when the variable is assigned. 
     #Catches single letter vars with numbers, ex. i1
@@ -104,15 +97,20 @@ do
     fi
     localBadVarNames=$(grep -E -c "[;\s]?([a-zA-Z])[\s\d]?=" $fileName)
     totalBadVarNames=$(($localBadVarNames + $totalBadVarNames))
-    echo "$localBadVarNames single-letter names in $fileName\n"
+    if (($localBadVarNames != 0)); then
+        echo "** $localBadVarNames single-letter names in $fileName"
+        echo
+    fi
 
     ############FILE HEADERS################
     #Unintelligent, looking for the word "login" lines after "/*"
     #Case-insensitive.
     #Thank you stack overflow
+    echo "Checking for missing file headers..."
     localMissingFileHeaders=$(grep -Pzic "(?s)(\/\*|\/\/).*\n.*login" $fileName)
     if (($localMissingFileHeaders == 0)); then
-        echo "Missing File Header in $fileName"
+        echo "** Missing File Header in $fileName"
+        echo
         totalMissingFileHeaders=$((1+$totalMissingFileHeaders))
     fi
 
@@ -157,37 +155,39 @@ do
         fi
     done
     
-    lastNameIndexToCheck=$((${#methodNames[@]} - 1))
+    echo "Checking for missing method headers..."
+    lastMethodIndexToCheck=$((${#methodNames[@]} - 1))
     
     #Grep the names of methods to see if there is an appropriate comment.
-    for name in `seq 0 $lastNameIndexToCheck`
+    for methodName in `seq 0 $lastMethodIndexToCheck`
     do
-        result=$(grep -Eic "Name:\s*${methodNames[$name]}" $fileName)
+        result=$(grep -Eic "Name:\s*${methodNames[$methodName]}" $fileName)
 
         if ((result == 0)); then
-            echo "Missing method header for ${methodNames[$name]} in $fileName"
+            echo "**Missing method header for ${methodNames[$methodName]} in $fileName"
             totalMissingMethodHeaders=$((1+$totalMissingMethodHeaders))
         fi
     done
+    echo
     
+    lastClassIndexToCheck=$((${#classNames[@]} - 1))
+    
+    echo "Checking for missing class headers..."
     #Grep the names of classes to see if there is an appropriate comment.
-    for name in `seq 0 $lastNameIndexToCheck`
+    for className in `seq 0 $lastClassIndexToCheck`
     do
-        result=$(grep -Eic "Name:\s*${classNames[$name]}" $fileName)
+        result=$(grep -Eic "Name:\s*${classNames[$className]}" $fileName)
 
         if ((result == 0)); then
-            echo "Missing class Header for ${classNames[$name]} in $fileName"
+            echo "**Missing class Header for ${classNames[$className]} in $fileName"
             totalMissingClassHeaders=$((1+$totalMissingClassHeaders))
         fi
     done
-    
+    echo
     #################MAGIC NUMBERS#########################
-    echo "Checking for magic numbers...\n"
-    if (($verbose == 1)); then
-        grep -E -nH '([\s,+-]([2-9]\d{0,})|(1\d{1,}))' $fileName
-    fi
+    echo "Checking for magic numbers..."
     
-    magicNumLines=$(grep -Eon '[\s,\+-\/\*]([2-9]\d*)|(1\d+)' $fileName | cut -f1 -d ":")
+    magicNumLines=$(grep -Pon '[\s,\+\-\/\*]([2-9]\d*)|(1\d+)' $fileName | cut -f1 -d ":")
     read -a magicNumsArray <<< $magicNumLines
 
     lastNumIndexToCheck=$((${#magicNumsArray[@]} - 1))
@@ -211,6 +211,7 @@ do
             localMagicNums=$(($localMagicNums + 1))
 
             if (($verbose == 1)); then
+                echo -n "Line ${magicNumsArray[$numLine]}:"
                 sed "${magicNumsArray[$numLine]}!d" $fileName
             fi
         fi
@@ -219,18 +220,19 @@ do
     totalMagicNums=$(($localMagicNums + $totalMagicNums))
     
     if [[ !$localMagicNums -eq 0 ]]; then
-        echo "$localMagicNums magic nums in $fileName\n"
+        echo "**$localMagicNums magic nums in $fileName"
+        echo
     fi
 done
 
 proportion=$(bc <<< "scale=2; $totalNumComments / $totalNumLines * 100")
 
 echo "-----RESULTS-----"
-echo "$totalLinesOver80 lines over 80."
-echo "$totalMagicNums magic numbers."
-echo "$totalBadVarNames bad variable names."
 echo "$proportion% of files are comments. 25%-50% is usually good."
-echo "$totalMissingFileHeaders missing file headers."
 echo "$totalMissingMethodHeaders missing method headers."
 echo "$totalMissingClassHeaders missing class headers."
+echo "$totalMissingFileHeaders missing file headers."
+echo "$totalBadVarNames bad variable names."
+echo "$totalLinesOver80 lines over 80."
+echo "$totalMagicNums magic numbers."
 
