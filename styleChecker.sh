@@ -2,7 +2,8 @@
 #styleChecker: A tool to help check style in programs, according to Ord's specs
 #Made by Anish Kannan
 #Thanks to Nick Crow (Nack) for regex help
-#TODO Check mix of tabs and spaces. Indetation. 
+#TODO Check mix of tabs and spaces. Indentation. Suggests that are
+#directly copypastable
 
 OPTIND=1         # Reset in case getopts has been used previously in the shell.
 
@@ -72,8 +73,6 @@ do
     DSArraySize=$((${#doubleSlashCommentArray[@]} - 1)) 
     for commentArrayIndex in `seq 0 $DSArraySize`
     do
-#TODO REMOvE
-        #echo "line: ${doubleSlashCommentArray[$commentArrayIndex]}"
         #To check whether a line is a comment, just check the value at line number.
         commentArray[${doubleSlashCommentArray[$commentArrayIndex]}]=1
     done
@@ -123,7 +122,7 @@ do
     totalLinesOver80=$(($localLinesOver80 + $totalLinesOver80))
     if (($localLinesOver80 != 0)); then
         echo
-        echo "**$localLinesOver80 lines over 80 chars in $fileName"
+        echo " **$localLinesOver80 lines over 80 chars in $fileName"
         echo
     fi
     #######################BAD VARIABLE NAMES##############
