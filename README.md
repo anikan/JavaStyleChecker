@@ -3,6 +3,7 @@ Checks style for Ord's Java assignments
 It's not 100% perfect, so if there are any issues please comment so I can fix it. I recommend using it to double check grading.
 You can pass in multiple files at once, and it will check them individually and then sum all of the results.
 What it does:
+
 *It first checks how much of the file is comments.
 *Then checks for missing method, class, and file headers.
 *Then one letter (i,j,k) and one letter and number (i1,j2,k3) variable names.
