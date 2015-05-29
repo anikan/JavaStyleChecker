@@ -17,6 +17,7 @@ Known issues:
 * grep doesn't like it when there aren't space characters at the front. Shouldn't be an issue unless their style is really bad.
 
 Options: 
--v: Verbose- display lines and line numbers that have issues (results of grep).
--s: Suggestions- (Planned) gives copy pastable suggestions for the issues that you can just put into the spreadsheet.
--f: False Positive- (Might do) causes magic numbers that exist on the same line as comments
+* -v: Verbose- display lines and line numbers that have issues (results of grep).
+* -s: Show Step- shows all of the steps, even ones that pass. 
+* -c: Comments- (Planned) gives copy pastable comments for the issues that you can just put into the spreadsheet.
+* -f: False Positive- (Might do) causes magic numbers that exist on the same line as comments
