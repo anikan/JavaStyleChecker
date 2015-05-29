@@ -11,6 +11,7 @@ totalLinesOver80=0
 totalMagicNums=0
 totalBadVarNames=0
 verbose=0
+showSteps=0
 totalNumLines=0
 totalNumComments=0
 totalMissingFileHeaders=0
@@ -19,9 +20,10 @@ totalMissingClassHeaders=0
 
 show_help()
 {
-    echo "Usage: [-v] FILE..."
+    echo "Usage: [OPTION] FILE..."
     echo "Checks style for FILE(s). Ord-style"
     echo "-v, --verbose     print the results of each grep to find which lines have issues."
+    echo "-s, --show        show all of the steps along the way."
 }
 
 while getopts "h?v" opt; do
@@ -31,6 +33,8 @@ while getopts "h?v" opt; do
         exit 0
         ;;
     v)  verbose=1
+        ;;
+    s)  showSteps=1
         ;;
     esac
 done
@@ -56,7 +60,10 @@ do
     echo "Checking $fileName"
  
     #####################COMMENT PROPORTIONS###############
-    echo "Checking for comment proportions."
+    if (($showSteps == 1)); then
+        echo "Checking for comment proportions."
+    fi
+
     #Handle // comments
     localNumLines=$(wc -l < $fileName)
     localNumComments=$(grep -E -c "\/\/" $fileName)
@@ -113,7 +120,10 @@ do
     totalNumComments=$(($localNumComments + $totalNumComments))
       
     ##########################LONG LINES###################
-    echo "Checking for lines over 80 chars..."
+    if (($showSteps == 1)); then
+        echo "Checking for lines over 80 chars..."
+    fi
+
     if (($verbose == 1)); then
         grep -EnH '.{81}' $fileName
     fi
@@ -121,14 +131,15 @@ do
     localLinesOver80=$(grep -Ec '.{81}' "$fileName")
     totalLinesOver80=$(($localLinesOver80 + $totalLinesOver80))
     if (($localLinesOver80 != 0)); then
-        echo
-        echo " **$localLinesOver80 lines over 80 chars in $fileName"
+        echo " ** $localLinesOver80 lines over 80 chars in $fileName"
         echo
     fi
     #######################BAD VARIABLE NAMES##############
     #Catches when the variable is assigned. 
     #Catches single letter vars with numbers, ex. i1
-    echo "Checking for 1 letter variable names."
+    if (($showSteps == 1)); then
+        echo "Checking for 1 letter variable names."
+    fi
 
     if (($verbose == 1)); then
         grep -PinH "[;\s\(]([a-z])[\s\d]?=" $fileName 
@@ -144,7 +155,10 @@ do
     #Unintelligent, looking for the word "login" lines after "/*"
     #Case-insensitive.
     #Thank you stack overflow
-    echo "Checking for missing file headers..."
+    if (($showSteps == 1)); then
+        echo "Checking for missing file headers..."
+    fi
+
     localMissingFileHeaders=$(grep -Pzic "(?s)(\/\*|\/\/).*\n.*login" $fileName)
     if (($localMissingFileHeaders == 0)); then
         echo "** Missing File Header in $fileName"
@@ -159,7 +173,7 @@ do
     #First get the lines with an access modifier: These are classes,
     #instance variables, and methods.
     linesWithAccessModifier=$(grep -Eon "public|private" $fileName | cut -f1 -d ":")
-    
+
     #Initializing for each file.
     unset accessModifierLinesArray
     read -a accessModifierLinesArray <<< $linesWithAccessModifier
@@ -197,7 +211,7 @@ do
 
             #If the word is not a method then check if it is a class
             else
-                result=$(sed "${accessModifierLinesArray[$lineNumIndex]}!d" $fileName | grep -Eo "class\s+\S+" | cut -f2 -d " ")
+                result=$(sed "${accessModifierLinesArray[$lineNumIndex]}!d" $fileName | grep -Po "class\s+[^{\s]+" | cut -f2 -d " ")
 
                 #If the word is a valid class then put it in classNames
                 if [[ ! -z "$result" ]]; then
@@ -214,7 +228,9 @@ do
         fi
     done
     
-    echo "Checking for missing method headers..."
+    if (($showSteps == 1)); then
+        echo "Checking for missing method headers..."
+    fi
     lastMethodIndexToCheck=$((${#methodNames[@]} - 1))
     
     #Grep the names of methods to see if there is an appropriate comment.
@@ -223,28 +239,31 @@ do
         result=$(grep -Eic "Name:\s*${methodNames[$methodName]}" $fileName)
 
         if ((result == 0)); then
-            echo "**Missing method header for ${methodNames[$methodName]} in $fileName"
+            echo "** Missing method header for ${methodNames[$methodName]} in $fileName"
             totalMissingMethodHeaders=$((1+$totalMissingMethodHeaders))
         fi
     done
-    echo
-    
+ 
     lastClassIndexToCheck=$((${#classNames[@]} - 1))
     
-    echo "Checking for missing class headers..."
+    if (($showSteps == 1)); then
+        echo "Checking for missing class headers..."
+    fi
+
     #Grep the names of classes to see if there is an appropriate comment.
     for className in `seq 0 $lastClassIndexToCheck`
     do
         result=$(grep -Eic "Name:\s*${classNames[$className]}" $fileName)
 
         if (($result == 0)); then
-            echo "**Missing class Header for ${classNames[$className]} in $fileName"
+            echo "** Missing class Header for ${classNames[$className]} in $fileName"
             totalMissingClassHeaders=$((1+$totalMissingClassHeaders))
         fi
     done
-    echo
     #################MAGIC NUMBERS#########################
-    echo "Checking for magic numbers..."
+    if (($showSteps == 1)); then
+        echo "Checking for magic numbers..."
+    fi
     
     #initializing it for each file.
     unset magicNumsArray
@@ -292,7 +311,7 @@ do
     totalMagicNums=$(($localMagicNums + $totalMagicNums))
     
     if [[ !$localMagicNums -eq 0 ]]; then
-        echo "**$localMagicNums magic nums in $fileName"
+        echo "** $localMagicNums magic nums in $fileName"
         echo
     fi
 done
