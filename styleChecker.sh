@@ -271,7 +271,7 @@ do
     #initializing it for each file.
     unset magicNumsArray
 
-    magicNumLines=$(grep -Pon '[\s,\+\-\/\*=]([2-9]\d*)|(1\d+)' $fileName | cut -f1 -d ":")
+    magicNumLines=$(grep -Pon '[\s,\+\-\/\*=](([2-9]\d*)|(1\d+))' $fileName | cut -f1 -d ":")
     
     read -a magicNumsArray <<< $magicNumLines
 
@@ -292,7 +292,9 @@ do
 
             #Need to remove extraneous matches that are due to commented out portions.
             numsToBeIgnored=$(sed "${commentArray[${magicNumsArray[$numLine]}]}!d" $fileName | awk -F "//" '{print $2}')
-            commentIgnoreResult=$( echo "$numsToBeIgnored" | grep -Po '[\s,\+\-\/\*=]([2-9]\d*)|(1\d+)' | wc -l)
+            
+            #Note there is a space here before numsToBeIgnored in case the magic num is right after the "//".
+            commentIgnoreResult=$( echo " $numsToBeIgnored" | grep -Po '[\s,\+\-\/\*=]([2-9]\d*)|(1\d+)' | wc -l)
 
             #If there are commented magic numbers, then increment numLine to skip those.
             if [[ -z $commentResult ]]; then
@@ -304,7 +306,7 @@ do
             fi
 
             #Still need to check if this number is magic.
-            commentResult=$( echo "$checkCommentInLine" | grep -Pon '[\s,\+\-\/\*=]([2-9]\d*)|(1\d+)' | cut -f1 -d ":")
+            commentResult=$( echo " $checkCommentInLine" | grep -Pon '[\s,\+\-\/\*=]([2-9]\d*)|(1\d+)' | cut -f1 -d ":")
 
             #If the grep didn't find the number, then it was after the "//"
             if [[ -z $commentResult ]]; then
@@ -319,7 +321,6 @@ do
         fi
                 
         #If it is still bad, then check it's an instance variable.
-        #Inefficient, but checking if one of the magic numbers is an instance variable.
         #If so then it isn't a magic number. Note: ignoring static and final.
         #public instance variables are also ok.
         if [[ $isBad -eq 1 ]]; then
