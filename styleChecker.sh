@@ -81,6 +81,7 @@ do
     for commentArrayIndex in `seq 0 $DSArraySize`
     do
         #To check whether a line is a comment, just check the value at line number.
+        #A double slash comment is 1
         commentArray[${doubleSlashCommentArray[$commentArrayIndex]}]=1
     done
 
@@ -105,10 +106,11 @@ do
     do
         localNumComments=$((${endCommentArray[$index]} - ${startCommentArray[$index]} + $localNumComments))
     
-        #For later, to keep track of which lines are comments.
+        #For later, to keep track of which lines are comments. A "/* */" comment
+        #is 2.
         for commentArrayIndex in `seq ${startCommentArray[$index]} ${endCommentArray[$index]}`
         do
-            commentArray[$commentArrayIndex]=1
+            commentArray[$commentArrayIndex]=2
         done
     done
         
@@ -269,7 +271,7 @@ do
     #initializing it for each file.
     unset magicNumsArray
 
-    magicNumLines=$(grep -Pon '[\s,\+\-\/\*]([2-9]\d*)|(1\d+)' $fileName | cut -f1 -d ":")
+    magicNumLines=$(grep -Pon '[\s,\+\-\/\*=]([2-9]\d*)|(1\d+)' $fileName | cut -f1 -d ":")
     
     read -a magicNumsArray <<< $magicNumLines
 
@@ -277,19 +279,49 @@ do
     lastInstanceVarIndex=$((${#instanceVarLines[@]} - 1))
 
     #From these magic numbers, remove those that are actually instance variables.
-    for numLine in `seq 0 $lastNumIndexToCheck`
+    numLine=0
+    while [ $numLine -lt $lastNumIndexToCheck ]
     do
 
-        #First check if the magic number appeared in a comment.
+        #First check if the magic number appeared in a "//" comment.
         isBad=1
         if [[ ${commentArray[${magicNumsArray[$numLine]}]} -eq 1 ]]; then
-            isBad=0 
+            #We know there is a comment on the line, want to check if it starts before the number.
+            #Eg: "int potato = 0 //64 is my favorite number" should be ok.
+            checkCommentInLine=$(sed "${commentArray[${magicNumsArray[$numLine]}]}!d" $fileName | awk -F "//" '{print $1}')
+
+            #Need to remove extraneous matches that are due to commented out portions.
+            numsToBeIgnored=$(sed "${commentArray[${magicNumsArray[$numLine]}]}!d" $fileName | awk -F "//" '{print $2}')
+            commentIgnoreResult=$( echo "$numsToBeIgnored" | grep -Po '[\s,\+\-\/\*=]([2-9]\d*)|(1\d+)' | wc -l)
+
+            #If there are commented magic numbers, then increment numLine to skip those.
+            if [[ -z $commentResult ]]; then
+                numLine=$(($numLine+ $commentIgnoreResult))
+
+                #We've already removed magic nums after the comment. Any other
+                #matches are actual magic numbers.
+                commentArray[${magicNumsArray[$numLine]}]=3
+            fi
+
+            #Still need to check if this number is magic.
+            commentResult=$( echo "$checkCommentInLine" | grep -Pon '[\s,\+\-\/\*=]([2-9]\d*)|(1\d+)' | cut -f1 -d ":")
+
+            #If the grep didn't find the number, then it was after the "//"
+            if [[ -z $commentResult ]]; then
+                isBad=0 
+            fi
+
+        #If the magic number appeared in a "/* */" comment.
+        else
+            if [[ ${commentArray[${magicNumsArray[$numLine]}]} -eq 2 ]]; then
+                isBad=0
+            fi
         fi
                 
-            #If it is still bad, then check it's an instance variable.
-            #Inefficient, but checking if one of the magic numbers is an instance variable.
-            #If so then it isn't a magic number. Note: ignoring static and final.
-            #public instance variables are also ok.
+        #If it is still bad, then check it's an instance variable.
+        #Inefficient, but checking if one of the magic numbers is an instance variable.
+        #If so then it isn't a magic number. Note: ignoring static and final.
+        #public instance variables are also ok.
         if [[ $isBad -eq 1 ]]; then
             for numInstanceVar in `seq 0 $lastInstanceVarIndex`
             do
@@ -307,6 +339,9 @@ do
                 sed "${magicNumsArray[$numLine]}!d" $fileName
             fi
         fi
+
+        #Increment for loop.
+        numLine=$(($numLine + 1))
     done
     
     totalMagicNums=$(($localMagicNums + $totalMagicNums))
