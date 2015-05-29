@@ -137,14 +137,15 @@ do
     #######################BAD VARIABLE NAMES##############
     #Catches when the variable is assigned. 
     #Catches single letter vars with numbers, ex. i1
+    #Updated: 5/28/15 21:11 (Purag Moumdjian)
     if (($showSteps == 1)); then
         echo "Checking for 1 letter variable names."
     fi
 
     if (($verbose == 1)); then
-        grep -PinH "[;\s\(]([a-z])[\s\d]?=" $fileName 
+        grep -PinH "([a-z]+(\s?\[\])*\s)([a-z]([0-9]*)\s?(?=[;:=]))" $fileName 
     fi
-    localBadVarNames=$(grep -Pci "[;\s\(]([a-z])[\s\d]?=" $fileName)
+    localBadVarNames=$(grep -Pci "([a-z]+(\s?\[\])*\s)([a-z]([0-9]*)\s?(?=[;:=]))" $fileName)
     totalBadVarNames=$(($localBadVarNames + $totalBadVarNames))
     if (($localBadVarNames != 0)); then
         echo "** $localBadVarNames single-letter names in $fileName"
