@@ -2,8 +2,8 @@
 #styleChecker: A tool to help check style in programs, according to Ord's specs
 #Made by Anish Kannan
 #Thanks to Nick Crow (Nack) for regex help
-#TODO Check mix of tabs and spaces. Indentation. Suggests that are
-#directly copypastable
+#Thanks to Purag Moumdjian for help testing and with a solution for bad variable names.
+#TODO Check mix of tabs and spaces. Suggestions that are directly copypastable
 
 OPTIND=1         # Reset in case getopts has been used previously in the shell.
 
@@ -17,13 +17,14 @@ totalNumComments=0
 totalMissingFileHeaders=0
 totalMissingMethodHeaders=0
 totalMissingClassHeaders=0
+totalBadIndentedLines=0
 
 show_help()
 {
     echo "Usage: [OPTION] FILE..."
     echo "Checks style for FILE(s). Ord-style"
     echo "-v, --verbose     print the results of each grep to find which lines have issues."
-    echo "-s, --show        show all of the steps along the way."
+    echo "-s, --show        show all of the steps along the way. (Deprecated)"
 }
 
 while getopts "h?v" opt; do
@@ -57,6 +58,8 @@ do
     localMissingFileHeaders=0
     localMissingMethodHeaders=0
     localMissingClassHeaders=0
+    localBadIndentedLines=0
+
     echo "Checking $fileName"
  
     #####################COMMENT PROPORTIONS###############
@@ -145,10 +148,12 @@ do
     fi
 
     if (($verbose == 1)); then
-        grep -PinH "([a-z]+(\s?\[\])*\s)([a-z]([0-9]*)\s?(?=[;:=]))" $fileName 
+        grep -PinH "(([a-z]+(\s?\[\])*\s)([a-z]([0-9]*)\s?(?=[;:=])))|temp" $fileName 
     fi
-    localBadVarNames=$(grep -Pci "([a-z]+(\s?\[\])*\s)([a-z]([0-9]*)\s?(?=[;:=]))" $fileName)
+    #Looking for single letter names with numbers after. Also temp.
+    localBadVarNames=$(grep -Pci "(([a-z]+(\s?\[\])*\s)([a-z]([0-9]*)\s?(?=[;:=])))|temp" $fileName)
     totalBadVarNames=$(($localBadVarNames + $totalBadVarNames))
+    
     if (($localBadVarNames != 0)); then
         echo "** $localBadVarNames single-letter names in $fileName"
         echo
@@ -278,12 +283,12 @@ do
     lastNumIndexToCheck=$((${#magicNumsArray[@]} - 1))
     lastInstanceVarIndex=$((${#instanceVarLines[@]} - 1))
 
-    #From these magic numbers, remove those that are actually instance variables.
+    #From these magic numbers, remove those that are actually instance variables or in comments.
     numLine=0
-    while [ $numLine -lt $lastNumIndexToCheck ]
+    while [ $numLine -le $lastNumIndexToCheck ]
     do
 
-        #First check if the magic number appeared in a "//" comment.
+        #First check if the magic number appeared in a "//" comment. If the type is 1.
         isBad=1
         if [[ ${commentArray[${magicNumsArray[$numLine]}]} -eq 1 ]]; then
             #We know there is a comment on the line, want to check if it starts before the number.
@@ -297,11 +302,12 @@ do
             commentIgnoreResult=$( echo " $numsToBeIgnored" | grep -Po '[\s,\+\-\/\*=]([2-9]\d*)|(1\d+)' | wc -l)
 
             #If there are commented magic numbers, then increment numLine to skip those.
-            if [[ -z $commentResult ]]; then
+            if [[ $commentIgnoreResult != 0 ]]; then
+
                 numLine=$(($numLine+ $commentIgnoreResult))
 
                 #We've already removed magic nums after the comment. Any other
-                #matches are actual magic numbers.
+                #matches are actual magic numbers. Setting type to already checked //.
                 commentArray[${magicNumsArray[$numLine]}]=3
             fi
 
@@ -351,6 +357,87 @@ do
         echo "** $localMagicNums magic nums in $fileName"
         echo
     fi
+    
+    ############INDENTATION################
+    #Thanks to Nack for this method of implementation.
+    #Essentially makes copies of the file, gg=G's them after setting 
+    #indentation and finds the closest one to the input code.
+    if (($showSteps == 1)); then
+        echo "Checking for indentation..."
+    fi
+    
+    #Copies of file.
+    cp $fileName "TEMP_2SpaceCopy"
+    cp $fileName "TEMP_3SpaceCopy"
+    cp $fileName "TEMP_4SpaceCopy"
+    
+    #Autoindenting with different indentation levels.
+    vim -es -c 'set expandtab|set softtabstop=2|set tabstop=2|set shiftwidth=2|retab|normal gg=G' -c 'wq' TEMP_2SpaceCopy
+    vim -es -c 'set expandtab|set softtabstop=3|set tabstop=3|set shiftwidth=3|retab|normal gg=G' -c 'wq' TEMP_3SpaceCopy
+    vim -es -c 'set expandtab|set softtabstop=4|set tabstop=4|set shiftwidth=4|retab|normal gg=G' -c 'wq' TEMP_4SpaceCopy
+
+    #Trying to find which level matches input code closest. Grepping for '<' for number of different lines.
+    diff2Space=$(diff $fileName TEMP_2SpaceCopy | grep '<' | wc -l)
+    diff3Space=$(diff $fileName TEMP_3SpaceCopy | grep '<' | wc -l)
+    diff4Space=$(diff $fileName TEMP_4SpaceCopy | grep '<' | wc -l)
+
+    #Two spaces.
+    if [[ $diff2Space < $diff3Space && $diff2Space < $diff4Space ]] ; then
+        echo "Detected 2 space indentation."
+        if [[ $diff2Space != 0 ]]; then
+            echo "$diff2Space lines seem to have poor indentation."
+            totalBadIndentedLines=$(($totalBadIndentedLines + $diff2Space))
+            
+            if (($verbose == 1)); then
+                diff --unchanged-line-format="" --old-line-format="" --new-line-format="Line %dn:%L" $fileName TEMP_2SpaceCopy
+                #sdiff -s $fileName TEMP_2SpaceCopy
+            fi
+        else
+            echo
+        fi
+    fi
+
+    #Three spaces.
+    if [[ $diff3Space < $diff2Space && $diff3Space < $diff4Space ]] ; then
+        echo "Detected 3 space indentation."
+        if [[ $diff3Space != 0 ]]; then
+            echo "$diff3Space lines seem to have poor indentation."
+            totalBadIndentedLines=$(($totalBadIndentedLines + $diff3Space))
+            
+            if (($verbose == 1)); then
+                diff --unchanged-line-format="" --old-line-format="" --new-line-format="Line %dn:%L" $fileName TEMP_3SpaceCopy
+                #sdiff -s $fileName TEMP_3SpaceCopy
+            fi
+        else
+            echo
+        fi
+    fi 
+
+    #Four spaces.
+    if [[ $diff4Space < $diff2Space && $diff4Space < $diff3Space ]] ; then
+        echo "Detected 4 space indentation."
+        if [[ $diff4Space != 0 ]]; then
+            echo "$diff4Space lines seem to have poor indentation."
+            totalBadIndentedLines=$(($totalBadIndentedLines + $diff4Space))
+            
+            if (($verbose == 1)); then
+                diff --unchanged-line-format="" --old-line-format="" --new-line-format="Line %dn:%L" $fileName TEMP_4SpaceCopy
+                #sdiff -s $fileName TEMP_4SpaceCopy
+            fi
+        else
+            echo
+        fi
+    else
+        echo "Detected other indentation. Please investigate."
+        echo "$diff4Space lines seem to have poor indentation."
+        totalBadIndentedLines=$(($totalBadIndentedLines + $diff4Space))
+    fi
+    
+    #Get rid of the copies.
+    rm "TEMP_2SpaceCopy"
+    rm "TEMP_3SpaceCopy"
+    rm "TEMP_4SpaceCopy"
+
 done
 
 proportion=$(bc <<< "scale=2; $totalNumComments / $totalNumLines * 100")
@@ -362,5 +449,6 @@ echo "$totalMissingClassHeaders missing class headers."
 echo "$totalMissingFileHeaders missing file headers."
 echo "$totalBadVarNames bad variable names."
 echo "$totalLinesOver80 lines over 80."
+echo "$totalBadIndentedLines lines incorrectly indented."
 echo "$totalMagicNums magic numbers."
 
