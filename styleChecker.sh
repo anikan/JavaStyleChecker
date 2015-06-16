@@ -167,7 +167,7 @@ do
         echo "Checking for missing file headers..."
     fi
 
-    localMissingFileHeaders=$(grep -Pzic "(?s)(\/\*|\/\/).*\n.*login" $fileName)
+    localMissingFileHeaders=$(grep -Pzic "login" $fileName)
     if (($localMissingFileHeaders == 0)); then
         echo "** Missing File Header in $fileName"
         echo
@@ -395,44 +395,44 @@ do
         else
             echo
         fi
-    fi
-
     #Three spaces.
-    if [[ $diff3Space < $diff2Space && $diff3Space < $diff4Space ]] ; then
-        echo "Detected 3 space indentation."
-        if [[ $diff3Space != 0 ]]; then
-            echo "$diff3Space lines seem to have poor indentation."
-            totalBadIndentedLines=$(($totalBadIndentedLines + $diff3Space))
+    else 
+        if [[ $diff3Space < $diff2Space && $diff3Space < $diff4Space ]] ; then
+            echo "Detected 3 space indentation."
+            if [[ $diff3Space != 0 ]]; then
+                echo "$diff3Space lines seem to have poor indentation."
+                totalBadIndentedLines=$(($totalBadIndentedLines + $diff3Space))
             
-            if (($verbose == 1)); then
-                diff --unchanged-line-format="" --old-line-format="" --new-line-format="Line %dn:%L" $fileName TEMP_3SpaceCopy
-                #sdiff -s $fileName TEMP_3SpaceCopy
+                if (($verbose == 1)); then
+                    diff --unchanged-line-format="" --old-line-format="" --new-line-format="Line %dn:%L" $fileName TEMP_3SpaceCopy
+                fi
+            else
+                echo
             fi
+
         else
-            echo
+            #Four spaces.
+            if [[ $diff4Space < $diff2Space && $diff4Space < $diff3Space ]] ; then
+                echo "Detected 4 space indentation."
+                if [[ $diff4Space != 0 ]]; then
+                    echo "$diff4Space lines seem to have poor indentation."
+                    totalBadIndentedLines=$(($totalBadIndentedLines + $diff4Space))
+            
+                    if (($verbose == 1)); then
+                        diff --unchanged-line-format="" --old-line-format="" --new-line-format="Line %dn:%L" $fileName TEMP_4SpaceCopy
+                    fi
+                else
+                    echo
+                fi
+            #Strange number of spaces.
+            else
+                echo "Detected other indentation. Please investigate."
+                echo "$diff4Space lines seem to have poor indentation."
+                totalBadIndentedLines=$(($totalBadIndentedLines + $diff4Space))
+            fi
         fi
     fi 
-
-    #Four spaces.
-    if [[ $diff4Space < $diff2Space && $diff4Space < $diff3Space ]] ; then
-        echo "Detected 4 space indentation."
-        if [[ $diff4Space != 0 ]]; then
-            echo "$diff4Space lines seem to have poor indentation."
-            totalBadIndentedLines=$(($totalBadIndentedLines + $diff4Space))
-            
-            if (($verbose == 1)); then
-                diff --unchanged-line-format="" --old-line-format="" --new-line-format="Line %dn:%L" $fileName TEMP_4SpaceCopy
-                #sdiff -s $fileName TEMP_4SpaceCopy
-            fi
-        else
-            echo
-        fi
-    else
-        echo "Detected other indentation. Please investigate."
-        echo "$diff4Space lines seem to have poor indentation."
-        totalBadIndentedLines=$(($totalBadIndentedLines + $diff4Space))
-    fi
-    
+       
     #Get rid of the copies.
     rm "TEMP_2SpaceCopy"
     rm "TEMP_3SpaceCopy"
