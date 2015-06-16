@@ -20,4 +20,4 @@ Known issues:
 Options: 
 * -v: Verbose- display lines and line numbers that have issues (results of grep and diff.).
 * -s: Show Step- shows all of the steps, even ones that pass. 
-* -c: Comments- (Planned) gives copy pastable comments for the issues that you can just put into the spreadsheet.
+* -c: Comments- gives copy pastable comments for the issues that you can just put into the spreadsheet.

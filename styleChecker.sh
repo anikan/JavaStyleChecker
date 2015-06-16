@@ -10,8 +10,6 @@ OPTIND=1         # Reset in case getopts has been used previously in the shell.
 totalLinesOver80=0
 totalMagicNums=0
 totalBadVarNames=0
-verbose=0
-showSteps=0
 totalNumLines=0
 totalNumComments=0
 totalMissingFileHeaders=0
@@ -19,21 +17,28 @@ totalMissingMethodHeaders=0
 totalMissingClassHeaders=0
 totalBadIndentedLines=0
 
+verbose=0
+showSteps=0
+showComments=0
+
 show_help()
 {
     echo "Usage: [OPTION] FILE..."
     echo "Checks style for FILE(s). Ord-style"
     echo "-v, --verbose     print the results of each grep to find which lines have issues."
+    echo "-c, --comments    Prints copy-pastable comments about the errors."
     echo "-s, --show        show all of the steps along the way. (Deprecated)"
 }
 
-while getopts "h?v" opt; do
+while getopts "h?vcs" opt; do
     case "$opt" in
     h|\?)
         show_help
         exit 0
         ;;
     v)  verbose=1
+        ;;
+    c)  showComments=1
         ;;
     s)  showSteps=1
         ;;
@@ -136,8 +141,9 @@ do
     localLinesOver80=$(grep -Ec '.{81}' "$fileName")
     totalLinesOver80=$(($localLinesOver80 + $totalLinesOver80))
     if (($localLinesOver80 != 0)); then
-        echo " ** $localLinesOver80 lines over 80 chars in $fileName"
+        echo "** $localLinesOver80 lines over 80 chars in $fileName"
         echo
+
     fi
     #######################BAD VARIABLE NAMES##############
     #Catches when the variable is assigned. 
@@ -172,6 +178,10 @@ do
         echo "** Missing File Header in $fileName"
         echo
         totalMissingFileHeaders=$((1+$totalMissingFileHeaders))
+        
+        if [[ $showComments == 1 ]]; then
+            comments="${comments}* You seem to be missing a file header for $fileName\n"
+        fi
     fi
 
     ############METHOD/CLASS HEADERS################
@@ -249,6 +259,11 @@ do
         if ((result == 0)); then
             echo "** Missing method header for ${methodNames[$methodName]} in $fileName"
             totalMissingMethodHeaders=$((1+$totalMissingMethodHeaders))
+        
+            if [[ $showComments == 1 ]]; then
+                comments="${comments}* You seem to be missing a method header for ${methodNames[$methodName]} in $fileName\n"
+            fi
+        
         fi
     done
  
@@ -266,6 +281,10 @@ do
         if (($result == 0)); then
             echo "** Missing class Header for ${classNames[$className]} in $fileName"
             totalMissingClassHeaders=$((1+$totalMissingClassHeaders))
+        
+            if [[ $showComments == 1 ]]; then
+                comments="${comments}* You seem to be missing a class header for ${classNames[$className]} in $fileName\n"
+            fi
         fi
     done
     #################MAGIC NUMBERS#########################
@@ -345,6 +364,10 @@ do
                 echo -n "Line ${magicNumsArray[$numLine]}:"
                 sed "${magicNumsArray[$numLine]}!d" $fileName
             fi
+            
+            if [[ $showComments == 1 ]]; then
+                comments=("${comments}* You seem to be using a magic number on line ${magicNumsArray[$numLine]} in $fileName\n")
+            fi
         fi
 
         #Increment for loop.
@@ -390,7 +413,6 @@ do
             
             if (($verbose == 1)); then
                 diff --unchanged-line-format="" --old-line-format="" --new-line-format="Line %dn:%L" $fileName TEMP_2SpaceCopy
-                #sdiff -s $fileName TEMP_2SpaceCopy
             fi
         else
             echo
@@ -452,3 +474,23 @@ echo "$totalLinesOver80 lines over 80."
 echo "$totalBadIndentedLines lines incorrectly indented."
 echo "$totalMagicNums magic numbers."
 
+if [[ $showComments == 1 ]]; then
+    echo "-----COMMENTS-----" 
+    echo -n $comments
+                    
+    if [[ $BadVarNames != 0 ]]; then
+      echo "* You seem to have variables with bad names. Try to make sure that they are descriptive of their purpose."
+    fi
+
+    if [[ $totalLinesOver80 != 0 ]]; then
+      echo "* You seem to have lines going over 80 characters. I recommend using \"grep .{,80} <fileName>\" to check if there are bad lines."
+    fi
+
+    if [[ $totalBadIndentedLines != 0 ]]; then
+        echo "* You seem to have lines that are improperly indented. Try using the \"gg=G\" command, it indents everything for you."
+    fi
+
+    if [[ $totalMagicNums != 0 ]]; then
+        echo "* Magic Numbers make modifying them later difficult. I recommend making a private static final variable to store this value instead."
+    fi
+fi
