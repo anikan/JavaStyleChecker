@@ -20,6 +20,7 @@ totalBadIndentedLines=0
 verbose=0
 showSteps=0
 showComments=0
+comments=""
 
 show_help()
 {
@@ -128,7 +129,7 @@ do
     echo
     totalNumLines=$(($localNumLines + $totalNumLines))
     totalNumComments=$(($localNumComments + $totalNumComments))
-      
+   
     ##########################LONG LINES###################
     if (($showSteps == 1)); then
         echo "Checking for lines over 80 chars..."
@@ -263,7 +264,6 @@ do
             if [[ $showComments == 1 ]]; then
                 comments="${comments}* You seem to be missing a method header for ${methodNames[$methodName]} in $fileName\n"
             fi
-        
         fi
     done
  
@@ -287,6 +287,7 @@ do
             fi
         fi
     done
+
     #################MAGIC NUMBERS#########################
     if (($showSteps == 1)); then
         echo "Checking for magic numbers..."
@@ -476,7 +477,7 @@ echo "$totalMagicNums magic numbers."
 
 if [[ $showComments == 1 ]]; then
     echo "-----COMMENTS-----" 
-    echo -n $comments
+    echo -ne "$comments"
                     
     if [[ $BadVarNames != 0 ]]; then
       echo "* You seem to have variables with bad names. Try to make sure that they are descriptive of their purpose."
