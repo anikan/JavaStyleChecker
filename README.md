@@ -16,6 +16,7 @@ What it does:
 
 Known issues: 
 * grep doesn't like it when there aren't space characters at the front. Shouldn't be an issue unless their style is really bad.
+* Want to add an option where it ignores style issues in provided code.
 
 Options: 
 * -v: Verbose- display lines and line numbers that have issues (results of grep and diff.).
