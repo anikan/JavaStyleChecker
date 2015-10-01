@@ -24,5 +24,6 @@ Options:
 * -c: Comments- gives copy pastable comments for the issues that you can just put into the spreadsheet.
 
 How to use:
-In shell, type "./styleChecker <options> <file1> <file2> <file3> ..."
+In shell, type "./styleChecker (options) (file1) (file2) (file3) ..."
+
 I use -vc.
