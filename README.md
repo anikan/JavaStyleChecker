@@ -17,8 +17,12 @@ What it does:
 Known issues: 
 * grep doesn't like it when there aren't space characters at the front. Shouldn't be an issue unless their style is really bad.
 * Want to add an option where it ignores style issues in provided code.
-
+ 
 Options: 
 * -v: Verbose- display lines and line numbers that have issues (results of grep and diff.).
-* -s: Show Step- shows all of the steps, even ones that pass. 
+* -s: Show Steps- shows all of the steps, even ones that pass. 
 * -c: Comments- gives copy pastable comments for the issues that you can just put into the spreadsheet.
+
+How to use:
+In shell, type "./styleChecker <options> <file1> <file2> <file3> ..."
+I use -vc.
