@@ -151,18 +151,18 @@ do
     #Catches single letter vars with numbers, ex. i1
     #Updated: 5/28/15 21:11 (Purag Moumdjian)
     if (($showSteps == 1)); then
-        echo "Checking for 1 letter variable names."
+        echo "Checking for bad variable names."
     fi
 
     if (($verbose == 1)); then
-        grep -PinH "(([a-z]+(\s?\[\])*\s)([a-z]([0-9]*)\s?(?=[;:=])))|temp" $fileName 
+        grep -PinH "[\s,;(]([a-z][0-9]*)\s*[;=]|temp|variable|var|thing" $fileName 
     fi
     #Looking for single letter names with numbers after. Also temp.
-    localBadVarNames=$(grep -Pci "(([a-z]+(\s?\[\])*\s)([a-z]([0-9]*)\s?(?=[;:=])))|temp" $fileName)
+    localBadVarNames=$(grep -Pci "[\s,;(]([a-z][0-9]*)\s*[;=]|temp|variable|var|thing" $fileName)
     totalBadVarNames=$(($localBadVarNames + $totalBadVarNames))
     
     if (($localBadVarNames != 0)); then
-        echo "** $localBadVarNames single-letter names in $fileName"
+        echo "** $localBadVarNames bad variable names in $fileName"
         echo
     fi
 
@@ -406,7 +406,7 @@ do
     diff4Space=$(diff $fileName TEMP_4SpaceCopy | grep '<' | wc -l)
 
     #Two spaces.
-    if [[ $diff2Space < $diff3Space && $diff2Space < $diff4Space ]] ; then
+    if (( $diff2Space < $diff3Space )) && (( $diff2Space < $diff4Space )) ; then
         echo "Detected 2 space indentation."
         if [[ $diff2Space != 0 ]]; then
             echo "$diff2Space lines seem to have poor indentation."
@@ -420,7 +420,7 @@ do
         fi
     #Three spaces.
     else 
-        if [[ $diff3Space < $diff2Space && $diff3Space < $diff4Space ]] ; then
+        if (( $diff3Space < $diff2Space )) && (( $diff3Space < $diff4Space )) ; then
             echo "Detected 3 space indentation."
             if [[ $diff3Space != 0 ]]; then
                 echo "$diff3Space lines seem to have poor indentation."
@@ -435,7 +435,7 @@ do
 
         else
             #Four spaces.
-            if [[ $diff4Space < $diff2Space && $diff4Space < $diff3Space ]] ; then
+            if (( $diff4Space < $diff2Space )) && (( $diff4Space < $diff3Space )) ; then
                 echo "Detected 4 space indentation."
                 if [[ $diff4Space != 0 ]]; then
                     echo "$diff4Space lines seem to have poor indentation."
@@ -480,7 +480,7 @@ if [[ $showComments == 1 ]]; then
     echo -ne "$comments"
                     
     if [[ $BadVarNames != 0 ]]; then
-      echo "* You seem to have variables with bad names. Try to make sure that they are descriptive of their purpose."
+      echo "* You seem to have variables with bad names. Try to make sure that they are descriptive of their purpose. Even loop iterator names should be descriptive. For example: \"for (int i =0...)\" would be bad."
     fi
 
     if [[ $totalLinesOver80 != 0 ]]; then
