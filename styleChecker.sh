@@ -203,12 +203,21 @@ do
     methodIndex=0
     classIndex=0
     instanceVarIndex=0
-    #Arrays.
+    #Arrays to be used. Unset for each file.
+
+    #Stores names of methods.
     unset methodNames
+
+    #Stores return types of methods
+    unset methodReturnTypes
+
+    # Stores names of classes.
     unset classNames
+
+    #Stores lines of instance variables.
     unset instanceVarLines
 
-    #Get all the names we will search for. Looking for open parens
+    #Get all the names we will search for. Could be class name, instance variable, or method.
     for lineNumIndex in `seq 0 $lastLineIndexToCheck`
     do
         #First removing instance var objects with same line declaration and initialization.
@@ -221,12 +230,19 @@ do
         else
            
             #Check for method names
-            result=$(sed "${accessModifierLinesArray[$lineNumIndex]}!d" $fileName | grep -Po "\S+(?=\()")
+            result=$(sed "${accessModifierLinesArray[$lineNumIndex]}!d" $fileName | grep -Po "\S+\s*(?=\()")
 
-            #If the word is a valid method then put it in methodNames
+            #If the word is a valid method then put it in methodNames. Then get params and return type.
             if [[ ! -z "$result" ]]; then
                 methodNames[$methodIndex]=$result
-                methodIndex=$(($methodIndex + 1))
+		
+                #Get return type.
+                returnResult=$(sed "${accessModifierLinesArray[$lineNumIndex]}!d" $fileName | grep -Po "\w+(?=\s+\w*\s*\()")
+
+		methodReturnTypes[$methodIndex]=$returnResult
+                
+
+		methodIndex=$(($methodIndex + 1))
 
             #If the word is not a method then check if it is a class
             else
