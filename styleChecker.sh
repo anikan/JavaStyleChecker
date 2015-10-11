@@ -211,6 +211,9 @@ do
     #Stores return types of methods
     unset methodReturnTypes
 
+    #Stores variables for methods.
+    unset methodVariables
+
     # Stores names of classes.
     unset classNames
 
@@ -240,7 +243,11 @@ do
                 returnResult=$(sed "${accessModifierLinesArray[$lineNumIndex]}!d" $fileName | grep -Po "\w+(?=\s+\w*\s*\()")
 
 		methodReturnTypes[$methodIndex]=$returnResult
-                
+
+		#Get parameters as a single string and remove the open parens. Will be split later.                
+		
+                returnVars=$(sed "${accessModifierLinesArray[$lineNumIndex]}!d" $fileName | grep -Po "\(.*(?=\))" | cut -f2 -d "("))
+		methodVars[$methodIndex]=$returnVars
 
 		methodIndex=$(($methodIndex + 1))
 
@@ -268,18 +275,29 @@ do
     fi
     lastMethodIndexToCheck=$((${#methodNames[@]} - 1))
     
-    #Grep the names of methods to see if there is an appropriate comment.
-    for methodName in `seq 0 $lastMethodIndexToCheck`
+    #Try to find matching comment for a method by finding the first "/**" before it.
+    for methodNameIndex in `seq 0 $lastMethodIndexToCheck`
     do
-        result=$(grep -Eic "Name:\s*${methodNames[$methodName]}" $fileName)
+	#Basically, this regex finds the javadoc comment that is not before another class.
+        result=$(grep -Pizo "\/\*\*[^\/]*\/[^\/\(]*${methodNames[$methodNameIndex]}" $fileName)
 
-        if ((result == 0)); then
-            echo "** Missing method header for ${methodNames[$methodName]} in $fileName"
+	#If a comment was found, check it's params and returns.
+        if ((result != 0)); then
+	    #First process parameters into an array.
+	    unset paramsArray
+    	    read -a accessModifierLinesArray <<< $linesWithAccessModifier
+
+
+	    #Check return.
+	else
+            echo "** Missing method header for ${methodNames[$methodNameIndex]} in $fileName"
             totalMissingMethodHeaders=$((1+$totalMissingMethodHeaders))
         
             if [[ $showComments == 1 ]]; then
-                comments="${comments}* You seem to be missing a method header for ${methodNames[$methodName]} in $fileName\n"
+                comments="${comments}* You seem to be missing a method header for ${methodNames[$methodNameIndex]} in $fileName\n"
             fi
+
+
         fi
     done
  
