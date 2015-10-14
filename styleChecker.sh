@@ -3,7 +3,7 @@
 #Made by Anish Kannan
 #Thanks to Nick Crow (Nack) for regex help
 #Thanks to Purag Moumdjian for help testing and with a solution for bad variable names.
-#TODO Check mix of tabs and spaces. Suggestions that are directly copypastable
+#TODO Handle @param 
 
 OPTIND=1         # Reset in case getopts has been used previously in the shell.
 
@@ -155,10 +155,10 @@ do
     fi
 
     if (($verbose == 1)); then
-        grep -PinH "[\s,;(]([a-z][0-9]*)\s*[;=]|temp|variable|var|thing" $fileName 
+        grep -PinH "[\s,;(]([a-z][0-9]*)\s*[;=]" $fileName 
     fi
-    #Looking for single letter names with numbers after. Also temp.
-    localBadVarNames=$(grep -Pci "[\s,;(]([a-z][0-9]*)\s*[;=]|temp|variable|var|thing" $fileName)
+    #Looking for single letter names with numbers after.
+    localBadVarNames=$(grep -Pci "[\s,;(]([a-z][0-9]*)\s*[;=]" $fileName)
     totalBadVarNames=$(($localBadVarNames + $totalBadVarNames))
     
     if (($localBadVarNames != 0)); then
@@ -240,14 +240,14 @@ do
                 methodNames[$methodIndex]=$result
 		
                 #Get return type.
-                returnResult=$(sed "${accessModifierLinesArray[$lineNumIndex]}!d" $fileName | grep -Po "\w+(?=\s+\w*\s*\()")
+         #       returnResult=$(sed "${accessModifierLinesArray[$lineNumIndex]}!d" $fileName | grep -Po "\w+(?=\s+\w*\s*\()")
 
-		methodReturnTypes[$methodIndex]=$returnResult
+		#methodReturnTypes[$methodIndex]=$returnResult
 
 		#Get parameters as a single string and remove the open parens. Will be split later.                
 		
-                returnVars=$(sed "${accessModifierLinesArray[$lineNumIndex]}!d" $fileName | grep -Po "\(.*(?=\))" | cut -f2 -d "("))
-		methodVars[$methodIndex]=$returnVars
+         #       returnVars=$(sed "${accessModifierLinesArray[$lineNumIndex]}!d" $fileName | grep -Po "\(.*(?=\))" | cut -f2 -d "("))
+		#methodVars[$methodIndex]=$returnVars
 
 		methodIndex=$(($methodIndex + 1))
 
@@ -278,24 +278,27 @@ do
     #Try to find matching comment for a method by finding the first "/**" before it.
     for methodNameIndex in `seq 0 $lastMethodIndexToCheck`
     do
-	#Basically, this regex finds the javadoc comment that is not before another class.
+	    #Basically, this regex finds the javadoc comment that is not before another class.
         result=$(grep -Pizo "\/\*\*[^\/]*\/[^\/\(]*${methodNames[$methodNameIndex]}" $fileName)
 
-	#If a comment was found, check it's params and returns.
-        if ((result != 0)); then
-	    #First process parameters into an array.
-	    unset paramsArray
-    	    read -a accessModifierLinesArray <<< $linesWithAccessModifier
-
-
-	    #Check return.
-	else
+        #If a comment wasn't found then handle missing header.
+        if [[ -z $result ]]; then
             echo "** Missing method header for ${methodNames[$methodNameIndex]} in $fileName"
             totalMissingMethodHeaders=$((1+$totalMissingMethodHeaders))
         
             if [[ $showComments == 1 ]]; then
                 comments="${comments}* You seem to be missing a method header for ${methodNames[$methodNameIndex]} in $fileName\n"
             fi
+
+        #Else check it's params and returns.
+        #else
+	    #First process parameters into an array.
+	    #unset paramsArray
+    	#    read -a accessModifierLinesArray <<< $linesWithAccessModifier
+
+
+	    #Check return.
+	    
 
 
         fi
@@ -330,8 +333,8 @@ do
     #initializing it for each file.
     unset magicNumsArray
 
-    magicNumLines=$(grep -Pon '[\s,\+\-\/\*=](([2-9]\d*)|(1\d+))' $fileName | cut -f1 -d ":")
-    
+    magicNumLines=$(grep -Pon '[\s,\+\-\/\*=\%\(\[<>](([2-9]\d*)|(1\d+))' $fileName | cut -f1 -d ":")
+   
     read -a magicNumsArray <<< $magicNumLines
 
     lastNumIndexToCheck=$((${#magicNumsArray[@]} - 1))
@@ -347,17 +350,16 @@ do
         if [[ ${commentArray[${magicNumsArray[$numLine]}]} -eq 1 ]]; then
             #We know there is a comment on the line, want to check if it starts before the number.
             #Eg: "int potato = 0 //64 is my favorite number" should be ok.
-            checkCommentInLine=$(sed "${commentArray[${magicNumsArray[$numLine]}]}!d" $fileName | awk -F "//" '{print $1}')
+            checkCommentInLine=$(sed "${magicNumsArray[$numLine]}!d" $fileName | awk -F "//" '{print $1}')
 
             #Need to remove extraneous matches that are due to commented out portions.
-            numsToBeIgnored=$(sed "${commentArray[${magicNumsArray[$numLine]}]}!d" $fileName | awk -F "//" '{print $2}')
+            numsToBeIgnored=$(sed "${magicNumsArray[$numLine]}!d" $fileName | awk -F "//" '{print $2}')
             
             #Note there is a space here before numsToBeIgnored in case the magic num is right after the "//".
-            commentIgnoreResult=$( echo " $numsToBeIgnored" | grep -Po '[\s,\+\-\/\*=]([2-9]\d*)|(1\d+)' | wc -l)
+            commentIgnoreResult=$( echo " $numsToBeIgnored" | grep -Po '[\s,\+\-\/\*=\%\(\[<>](([2-9]\d*)|(1\d+))' | wc -l)
 
             #If there are commented magic numbers, then increment numLine to skip those.
             if [[ $commentIgnoreResult != 0 ]]; then
-
                 numLine=$(($numLine+ $commentIgnoreResult))
 
                 #We've already removed magic nums after the comment. Any other
@@ -366,7 +368,7 @@ do
             fi
 
             #Still need to check if this number is magic.
-            commentResult=$( echo " $checkCommentInLine" | grep -Pon '[\s,\+\-\/\*=]([2-9]\d*)|(1\d+)' | cut -f1 -d ":")
+            commentResult=$( echo " $checkCommentInLine" | grep -Pon '[\s,\+\-\/\*=\%\(\[<>](([2-9]\d*)|(1\d+))' | cut -f1 -d ":")
 
             #If the grep didn't find the number, then it was after the "//"
             if [[ -z $commentResult ]]; then
@@ -396,7 +398,7 @@ do
             localMagicNums=$(($localMagicNums + 1))
 
             if (($verbose == 1)); then
-                echo -n "Line ${magicNumsArray[$numLine]}:"
+                echo -n "$fileName:Line ${magicNumsArray[$numLine]}:"
                 sed "${magicNumsArray[$numLine]}!d" $fileName
             fi
             
@@ -447,7 +449,7 @@ do
             totalBadIndentedLines=$(($totalBadIndentedLines + $diff2Space))
             
             if (($verbose == 1)); then
-                diff --unchanged-line-format="" --old-line-format="" --new-line-format="Line %dn:%L" $fileName TEMP_2SpaceCopy
+                diff --unchanged-line-format="" --old-line-format="" --new-line-format="$fileName:Line %dn:%L" $fileName TEMP_2SpaceCopy
             fi
         else
             echo
@@ -461,7 +463,7 @@ do
                 totalBadIndentedLines=$(($totalBadIndentedLines + $diff3Space))
             
                 if (($verbose == 1)); then
-                    diff --unchanged-line-format="" --old-line-format="" --new-line-format="Line %dn:%L" $fileName TEMP_3SpaceCopy
+                    diff --unchanged-line-format="" --old-line-format="" --new-line-format="$fileName:Line %dn:%L" $fileName TEMP_3SpaceCopy
                 fi
             else
                 echo
@@ -476,7 +478,7 @@ do
                     totalBadIndentedLines=$(($totalBadIndentedLines + $diff4Space))
             
                     if (($verbose == 1)); then
-                        diff --unchanged-line-format="" --old-line-format="" --new-line-format="Line %dn:%L" $fileName TEMP_4SpaceCopy
+                        diff --unchanged-line-format="" --old-line-format="" --new-line-format="$fileName:Line %dn:%L" $fileName TEMP_4SpaceCopy
                     fi
                 else
                     echo
