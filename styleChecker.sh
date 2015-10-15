@@ -313,9 +313,9 @@ do
     #Grep the names of classes to see if there is an appropriate comment.
     for className in `seq 0 $lastClassIndexToCheck`
     do
-        result=$(grep -Eic "Name:\s*${classNames[$className]}" $fileName)
+        result=$(grep -Pizo "\/\*\*[^\/]*\/[^\/\(]*${classNames[$className]}" $fileName)
 
-        if (($result == 0)); then
+        if [[ -z $result ]]; then
             echo "** Missing class Header for ${classNames[$className]} in $fileName"
             totalMissingClassHeaders=$((1+$totalMissingClassHeaders))
         
