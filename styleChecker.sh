@@ -18,7 +18,6 @@ totalMissingClassHeaders=0
 totalBadIndentedLines=0
 
 verbose=0
-showSteps=0
 showComments=0
 comments=""
 
@@ -28,7 +27,6 @@ show_help()
     echo "Checks style for FILE(s). Ord-style"
     echo "-v, --verbose     print the results of each grep to find which lines have issues."
     echo "-c, --comments    Prints copy-pastable comments about the errors."
-    echo "-s, --show        show all of the steps along the way. (Deprecated)"
 }
 
 while getopts "h?vcs" opt; do
@@ -40,8 +38,6 @@ while getopts "h?vcs" opt; do
     v)  verbose=1
         ;;
     c)  showComments=1
-        ;;
-    s)  showSteps=1
         ;;
     esac
 done
@@ -66,12 +62,10 @@ do
     localMissingClassHeaders=0
     localBadIndentedLines=0
 
-    echo "Checking $fileName"
+    echo "**********Checking $fileName*****************************************"
  
     #####################COMMENT PROPORTIONS###############
-    if (($showSteps == 1)); then
-        echo "Checking for comment proportions."
-    fi
+    echo "**********Checking for comment proportions***************************"
 
     #Handle // comments
     localNumLines=$(wc -l < $fileName)
@@ -131,9 +125,7 @@ do
     totalNumComments=$(($localNumComments + $totalNumComments))
    
     ##########################LONG LINES###################
-    if (($showSteps == 1)); then
-        echo "Checking for lines over 80 chars..."
-    fi
+    echo "**********Checking for lines over 80 characters**********************"
 
     if (($verbose == 1)); then
         grep -EnH '.{81}' $fileName | perl -ne 'print "!Over 80 Chars: $_"' 
@@ -150,9 +142,7 @@ do
     #Catches when the variable is assigned. 
     #Catches single letter vars with numbers, ex. i1
     #Updated: 5/28/15 21:11 (Purag Moumdjian)
-    if (($showSteps == 1)); then
-        echo "Checking for bad variable names."
-    fi
+    echo "**********Checking for bad variable names****************************"
 
     if (($verbose == 1)); then
         grep -PinH "[\s,;(]([a-z][0-9]*)\s*[;=]" $fileName | perl -ne 'print "!Bad Var Name: $_"' 
@@ -170,9 +160,7 @@ do
     #Unintelligent, looking for the word "login" lines after "/*"
     #Case-insensitive.
     #Thank you stack overflow
-    if (($showSteps == 1)); then
-        echo "Checking for missing file headers..."
-    fi
+    echo "**********Checking for missing file headers**************************"
 
     localMissingFileHeaders=$(grep -Pzic "login" $fileName)
     if (($localMissingFileHeaders == 0)); then
@@ -270,9 +258,7 @@ do
         fi
     done
     
-    if (($showSteps == 1)); then
-        echo "Checking for missing method headers..."
-    fi
+    echo "**********Checking for missing method headers************************"
     lastMethodIndexToCheck=$((${#methodNames[@]} - 1))
     
     #Try to find matching comment for a method by finding the first "/**" before it.
@@ -306,9 +292,7 @@ do
  
     lastClassIndexToCheck=$((${#classNames[@]} - 1))
     
-    if (($showSteps == 1)); then
-        echo "Checking for missing class headers..."
-    fi
+    echo "**********Checking for missing class headers*************************"
 
     #Grep the names of classes to see if there is an appropriate comment.
     for className in `seq 0 $lastClassIndexToCheck`
@@ -326,9 +310,7 @@ do
     done
 
     #################MAGIC NUMBERS#########################
-    if (($showSteps == 1)); then
-        echo "Checking for magic numbers..."
-    fi
+    echo "**********Checking for magic numbers*********************************"
     
     #initializing it for each file.
     unset magicNumsArray
@@ -422,9 +404,7 @@ do
     #Thanks to Nack for this method of implementation.
     #Essentially makes copies of the file, gg=G's them after setting 
     #indentation and finds the closest one to the input code.
-    if (($showSteps == 1)); then
-        echo "Checking for indentation..."
-    fi
+    echo "**********Checking for indentation***********************************"
     
     #Copies of file.
     cp $fileName "TEMP_2SpaceCopy"
@@ -438,9 +418,9 @@ do
 
     #Trying to find which level matches input code closest. Grepping for '<' for number of different lines.
     #-I is ignore. '^\s*$' is a regex to ignore blank lines.
-    diff2Space=$(diff -I '^\s*$' $fileName TEMP_2SpaceCopy | grep '<' | wc -l)
-    diff3Space=$(diff -I '^\s*$' $fileName TEMP_3SpaceCopy | grep '<' | wc -l)
-    diff4Space=$(diff -I '^\s*$' $fileName TEMP_4SpaceCopy | grep '<' | wc -l)
+    diff2Space=$(diff -BI '^\s*$' $fileName TEMP_2SpaceCopy | grep '<' | wc -l)
+    diff3Space=$(diff -BI '^\s*$' $fileName TEMP_3SpaceCopy | grep '<' | wc -l)
+    diff4Space=$(diff -BI '^\s*$' $fileName TEMP_4SpaceCopy | grep '<' | wc -l)
 
     #Two spaces.
     if (( $diff2Space < $diff3Space )) && (( $diff2Space < $diff4Space )) ; then
@@ -450,7 +430,7 @@ do
             totalBadIndentedLines=$(($totalBadIndentedLines + $diff2Space))
             
             if (($verbose == 1)); then
-                diff -I '^\s*$' --unchanged-line-format="" --old-line-format="" --new-line-format="!Indentation: $fileName:Line %dn:%L" $fileName TEMP_2SpaceCopy
+                diff -BI '^\s*$' --unchanged-line-format="" --old-line-format="" --new-line-format="!Indentation: $fileName:Line %dn:%L" $fileName TEMP_2SpaceCopy
             fi
         else
             echo
@@ -464,7 +444,7 @@ do
                 totalBadIndentedLines=$(($totalBadIndentedLines + $diff3Space))
             
                 if (($verbose == 1)); then
-                    diff -I '^\s*$' --unchanged-line-format="" --old-line-format="" --new-line-format="!Indentation: $fileName:Line %dn:%L" $fileName TEMP_3SpaceCopy
+                    diff -BI '^\s*$' --unchanged-line-format="" --old-line-format="" --new-line-format="!Indentation: $fileName:Line %dn:%L" $fileName TEMP_3SpaceCopy
                 fi
             else
                 echo
@@ -479,7 +459,7 @@ do
                     totalBadIndentedLines=$(($totalBadIndentedLines + $diff4Space))
             
                     if (($verbose == 1)); then
-                        diff -I '^\s*$' --unchanged-line-format="" --old-line-format="" --new-line-format="!Indentation: $fileName:Line %dn:%L" $fileName TEMP_4SpaceCopy
+                        diff -BI '^\s*$' --unchanged-line-format="" --old-line-format="" --new-line-format="!Indentation: $fileName:Line %dn:%L" $fileName TEMP_4SpaceCopy
                     fi
                 else
                     echo
@@ -516,7 +496,7 @@ if [[ $showComments == 1 ]]; then
     echo "-----COMMENTS-----" 
     echo -ne "$comments"
                     
-    if [[ $BadVarNames != 0 ]]; then
+    if [[ $totalBadVarNames != 0 ]]; then
       echo "* You seem to have variables with bad names. Try to make sure that they are descriptive of their purpose. Even loop iterator names should be descriptive. For example: \"for (int i =0...)\" would be bad."
     fi
 
