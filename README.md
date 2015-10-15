@@ -17,7 +17,6 @@ I recommend using it to double check grading as opposed to relying on it.
 
 ## Options: 
 * -v: Verbose- display lines and line numbers that have issues. Results of grep and diff are distinguished using "!" and the type of error.
-* -s: Show Steps- shows all of the steps, even ones that pass. 
 * -c: Comments- gives copy pastable comments for the issues that you can just put into the spreadsheet.
 
 ## How to use:
