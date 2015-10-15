@@ -136,7 +136,7 @@ do
     fi
 
     if (($verbose == 1)); then
-        grep -EnH '.{81}' $fileName
+        grep -EnH '.{81}' $fileName | perl -ne 'print "!Over 80 Chars: $_"' 
     fi
 
     localLinesOver80=$(grep -Ec '.{81}' "$fileName")
@@ -155,7 +155,7 @@ do
     fi
 
     if (($verbose == 1)); then
-        grep -PinH "[\s,;(]([a-z][0-9]*)\s*[;=]" $fileName 
+        grep -PinH "[\s,;(]([a-z][0-9]*)\s*[;=]" $fileName | perl -ne 'print "!Bad Var Name: $_"' 
     fi
     #Looking for single letter names with numbers after.
     localBadVarNames=$(grep -Pci "[\s,;(]([a-z][0-9]*)\s*[;=]" $fileName)
@@ -398,7 +398,7 @@ do
             localMagicNums=$(($localMagicNums + 1))
 
             if (($verbose == 1)); then
-                echo -n "$fileName:Line ${magicNumsArray[$numLine]}:"
+                echo -n "!Magic Num: $fileName:Line ${magicNumsArray[$numLine]}:"
                 sed "${magicNumsArray[$numLine]}!d" $fileName
             fi
             
@@ -450,7 +450,7 @@ do
             totalBadIndentedLines=$(($totalBadIndentedLines + $diff2Space))
             
             if (($verbose == 1)); then
-                diff -I '^\s*$' --unchanged-line-format="" --old-line-format="" --new-line-format="$fileName:Line %dn:%L" $fileName TEMP_2SpaceCopy
+                diff -I '^\s*$' --unchanged-line-format="" --old-line-format="" --new-line-format="!Indentation: $fileName:Line %dn:%L" $fileName TEMP_2SpaceCopy
             fi
         else
             echo
@@ -464,7 +464,7 @@ do
                 totalBadIndentedLines=$(($totalBadIndentedLines + $diff3Space))
             
                 if (($verbose == 1)); then
-                    diff -I '^\s*$' --unchanged-line-format="" --old-line-format="" --new-line-format="$fileName:Line %dn:%L" $fileName TEMP_3SpaceCopy
+                    diff -I '^\s*$' --unchanged-line-format="" --old-line-format="" --new-line-format="!Indentation: $fileName:Line %dn:%L" $fileName TEMP_3SpaceCopy
                 fi
             else
                 echo
@@ -479,7 +479,7 @@ do
                     totalBadIndentedLines=$(($totalBadIndentedLines + $diff4Space))
             
                     if (($verbose == 1)); then
-                        diff -I '^\s*$' --unchanged-line-format="" --old-line-format="" --new-line-format="$fileName:Line %dn:%L" $fileName TEMP_4SpaceCopy
+                        diff -I '^\s*$' --unchanged-line-format="" --old-line-format="" --new-line-format="!Indentation: $fileName:Line %dn:%L" $fileName TEMP_4SpaceCopy
                     fi
                 else
                     echo
