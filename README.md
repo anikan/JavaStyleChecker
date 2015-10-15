@@ -16,7 +16,7 @@ I recommend using it to double check grading as opposed to relying on it.
 * Finally it sums up all issues from all passed in files and displays results and optionally copy pastable comments.
 
 ## Options: 
-* -v: Verbose- display lines and line numbers that have issues (results of grep and diff.).
+* -v: Verbose- display lines and line numbers that have issues. Results of grep and diff are distinguished using "!" and the type of error.
 * -s: Show Steps- shows all of the steps, even ones that pass. 
 * -c: Comments- gives copy pastable comments for the issues that you can just put into the spreadsheet.
 
@@ -32,5 +32,6 @@ I use "./styleChecker -vc *.java".
 * Need to update to check javadoc style headers: @params and @returns.
 * Perhaps convert to java/python? Bash is a bit strange at times.
 * Declaring multiple variables on the same line makes it difficult to check the first one. Ex. "int x, y;", x would be ignored.
+* If the student doesn't use gg=G and brings a function to the next line, it may be falsely flagged.
 
 It's not 100% perfect, so if there are any issues aside from the ones listed above, please message me (Anish Kannan) on facebook so I can fix it. 
