@@ -437,9 +437,10 @@ do
     vim -es -c 'set expandtab|set softtabstop=4|set tabstop=4|set shiftwidth=4|retab|normal gg=G' -c 'wq' TEMP_4SpaceCopy
 
     #Trying to find which level matches input code closest. Grepping for '<' for number of different lines.
-    diff2Space=$(diff $fileName TEMP_2SpaceCopy | grep '<' | wc -l)
-    diff3Space=$(diff $fileName TEMP_3SpaceCopy | grep '<' | wc -l)
-    diff4Space=$(diff $fileName TEMP_4SpaceCopy | grep '<' | wc -l)
+    #-I is ignore. '^\s*$' is a regex to ignore blank lines.
+    diff2Space=$(diff -I '^\s*$' $fileName TEMP_2SpaceCopy | grep '<' | wc -l)
+    diff3Space=$(diff -I '^\s*$' $fileName TEMP_3SpaceCopy | grep '<' | wc -l)
+    diff4Space=$(diff -I '^\s*$' $fileName TEMP_4SpaceCopy | grep '<' | wc -l)
 
     #Two spaces.
     if (( $diff2Space < $diff3Space )) && (( $diff2Space < $diff4Space )) ; then
@@ -449,7 +450,7 @@ do
             totalBadIndentedLines=$(($totalBadIndentedLines + $diff2Space))
             
             if (($verbose == 1)); then
-                diff --unchanged-line-format="" --old-line-format="" --new-line-format="$fileName:Line %dn:%L" $fileName TEMP_2SpaceCopy
+                diff -I '^\s*$' --unchanged-line-format="" --old-line-format="" --new-line-format="$fileName:Line %dn:%L" $fileName TEMP_2SpaceCopy
             fi
         else
             echo
@@ -463,7 +464,7 @@ do
                 totalBadIndentedLines=$(($totalBadIndentedLines + $diff3Space))
             
                 if (($verbose == 1)); then
-                    diff --unchanged-line-format="" --old-line-format="" --new-line-format="$fileName:Line %dn:%L" $fileName TEMP_3SpaceCopy
+                    diff -I '^\s*$' --unchanged-line-format="" --old-line-format="" --new-line-format="$fileName:Line %dn:%L" $fileName TEMP_3SpaceCopy
                 fi
             else
                 echo
@@ -478,7 +479,7 @@ do
                     totalBadIndentedLines=$(($totalBadIndentedLines + $diff4Space))
             
                     if (($verbose == 1)); then
-                        diff --unchanged-line-format="" --old-line-format="" --new-line-format="$fileName:Line %dn:%L" $fileName TEMP_4SpaceCopy
+                        diff -I '^\s*$' --unchanged-line-format="" --old-line-format="" --new-line-format="$fileName:Line %dn:%L" $fileName TEMP_4SpaceCopy
                     fi
                 else
                     echo
