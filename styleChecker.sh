@@ -65,7 +65,7 @@ do
     echo "**********Checking $fileName*****************************************"
  
     #####################COMMENT PROPORTIONS###############
-    echo "**********Checking for comment proportions***************************"
+    echo -e "\n**********Checking for comment proportions***************************"
 
     #Handle // comments
     localNumLines=$(wc -l < $fileName)
@@ -125,7 +125,7 @@ do
     totalNumComments=$(($localNumComments + $totalNumComments))
    
     ##########################LONG LINES###################
-    echo "**********Checking for lines over 80 characters**********************"
+    echo -e "\n**********Checking for lines over 80 characters**********************"
 
     if (($verbose == 1)); then
         grep -EnH '.{81}' $fileName | perl -ne 'print "!Over 80 Chars: $_"' 
@@ -142,7 +142,7 @@ do
     #Catches when the variable is assigned. 
     #Catches single letter vars with numbers, ex. i1
     #Updated: 5/28/15 21:11 (Purag Moumdjian)
-    echo "**********Checking for bad variable names****************************"
+    echo -e "\n**********Checking for bad variable names****************************"
 
     if (($verbose == 1)); then
         grep -PinH "[\s,;(]([a-z][0-9]*)\s*[;=]" $fileName | perl -ne 'print "!Bad Var Name: $_"' 
@@ -160,7 +160,7 @@ do
     #Unintelligent, looking for the word "login" lines after "/*"
     #Case-insensitive.
     #Thank you stack overflow
-    echo "**********Checking for missing file headers**************************"
+    echo -e "\n**********Checking for missing headers**************************"
 
     localMissingFileHeaders=$(grep -Pzic "login" $fileName)
     if (($localMissingFileHeaders == 0)); then
@@ -258,7 +258,7 @@ do
         fi
     done
     
-    echo "**********Checking for missing method headers************************"
+    echo -e "\n**********Checking for missing method headers************************"
     lastMethodIndexToCheck=$((${#methodNames[@]} - 1))
     
     #Try to find matching comment for a method by finding the first "/**" before it.
@@ -292,7 +292,7 @@ do
  
     lastClassIndexToCheck=$((${#classNames[@]} - 1))
     
-    echo "**********Checking for missing class headers*************************"
+    echo -e "\n**********Checking for missing class headers*************************"
 
     #Grep the names of classes to see if there is an appropriate comment.
     for className in `seq 0 $lastClassIndexToCheck`
@@ -310,7 +310,7 @@ do
     done
 
     #################MAGIC NUMBERS#########################
-    echo "**********Checking for magic numbers*********************************"
+    echo -e "\n**********Checking for magic numbers*********************************"
     
     #initializing it for each file.
     unset magicNumsArray
@@ -404,7 +404,7 @@ do
     #Thanks to Nack for this method of implementation.
     #Essentially makes copies of the file, gg=G's them after setting 
     #indentation and finds the closest one to the input code.
-    echo "**********Checking for indentation***********************************"
+    echo -e "\n**********Checking for indentation***********************************"
     
     #Copies of file.
     cp $fileName "TEMP_2SpaceCopy"
