@@ -160,7 +160,7 @@ do
     #Unintelligent, looking for the word "login" lines after "/*"
     #Case-insensitive.
     #Thank you stack overflow
-    echo -e "\n**********Checking for missing headers**************************"
+    echo -e "\n**********Checking for missing file headers**************************"
 
     localMissingFileHeaders=$(grep -Pzic "login" $fileName)
     if (($localMissingFileHeaders == 0)); then
