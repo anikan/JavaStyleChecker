@@ -9,9 +9,9 @@ I recommend using it to double check grading as opposed to relying on it.
 * For every passed in file: 
 * It first checks how much of the file is comments.
 * Then checks for missing method, class, and file headers. (Currently not checking javadoc style).
-* Then one letter (i,j,k) and one letter and multiple number (i1,j2234,k3) variable names when assigned or declared (Thanks to Purag Moumdjian). Also temp, variable, var, and thing. Just to making sure they're reading the writeup.
+* Then one letter (i,j,k) and one letter and multiple number (i1,j2234,k3) variable names when assigned or declared (Thanks to Purag Moumdjian).
 * Then lines over 80 characters.
-* Then magic numbers. Makes sure that it isn't just assigning an instance variable and ignore magic nums in comments.
+* Then magic numbers. Makes sure that it isn't just assigning an instance variable and ignores magic nums in comments.
 * Then checks indentation.
 * Finally it sums up all issues from all passed in files and displays results and optionally copy pastable comments.
 
