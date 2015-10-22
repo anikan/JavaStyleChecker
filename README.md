@@ -21,9 +21,9 @@ I recommend using it to double check grading as opposed to relying on it.
 
 ## How to use:
 1. First clone the repo to your account. Then either move "stylechecker.sh" to the students directory or know the path to the students files.
-2. In shell, type "./styleChecker (options) (file1) (file2) (file3) ..."
+2. In shell, type "./styleChecker.sh (options) (file1) (file2) (file3) ..."
 	
-I use "./styleChecker -vc *.java".
+I use "./styleChecker.sh -vc *.java".
 
 ## Example output:
 #### No options:
